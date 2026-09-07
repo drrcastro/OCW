@@ -61,7 +61,7 @@ class CarACSwitch(SwitchEntity):
         """Turn A/C on by sending command_type 3 to `/api/command/{vin}/`."""
         client = hass_client(self.hass, self._entry_id)
         try:
-            await client.async_request("POST", f"/api/command/{self._vin}/", json={"vin": self._vin, "command_type": 3})
+            await client.async_send_command(self._vin, 3)  # 3 = A/C on
             self._is_on = True
         except Exception:  # pragma: no cover - network
             _LOGGER.exception("Failed to turn A/C on for %s", self._vin)
@@ -71,7 +71,7 @@ class CarACSwitch(SwitchEntity):
         """Turn A/C off by sending command_type 4."""
         client = hass_client(self.hass, self._entry_id)
         try:
-            await client.async_request("POST", f"/api/command/{self._vin}/", json={"vin": self._vin, "command_type": 4})
+            await client.async_send_command(self._vin, 4)  # 4 = A/C off
             self._is_on = False
         except Exception:  # pragma: no cover - network
             _LOGGER.exception("Failed to turn A/C off for %s", self._vin)
