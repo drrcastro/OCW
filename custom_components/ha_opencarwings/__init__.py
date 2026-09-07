@@ -27,7 +27,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     opts = getattr(entry, "options", {}) or {}
     base_url = opts.get("api_base_url", entry.data.get("api_base_url"))
     client = OpenCarWingsAPI(hass, base_url=base_url) if base_url else OpenCarWingsAPI(hass)
-    client.set_tokens(entry.data.get("access_token"), entry.data.get("refresh_token"))
+    
+    # Set authentication method: API key or JWT tokens
+    if entry.data.get("api_key"):
+        client.set_api_key(entry.data.get("api_key"))
+    else:
+        # Fallback for old entries with JWT tokens
+        client.set_tokens(entry.data.get("access_token"), entry.data.get("refresh_token"))
 
     # Ensure base_url is accessible on the client instance (helps tests and some clients)
     if base_url:
