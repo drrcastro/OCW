@@ -172,6 +172,16 @@ def _plugged_to_str(v: Any) -> str:
     return "plugged" if bool(v) else "unplugged"
 
 
+def _gear_to_str(v: Any) -> str | None:
+    if v is None:
+        return None
+    try:
+        gear = int(v)
+    except (TypeError, ValueError):
+        return str(v)
+    return {0: "Parked", 1: "Drive", 2: "Reverse"}.get(gear, f"Unknown ({gear})")
+
+
 SENSOR_ICONS = {
     "range_acon": "mdi:car-speed-limiter",
     "range_acoff": "mdi:car-speed-limiter",
@@ -242,7 +252,7 @@ CAR_SENSORS: list[CarSensorSpec] = [
     CarSensorSpec("full_chg_time", "Full Charge Time", _ev_getter("full_chg_time"), transform=_to_int, unit_of_measurement="min"),
     CarSensorSpec("limit_chg_time", "Limit Charge Time", _ev_getter("limit_chg_time"), transform=_to_int, unit_of_measurement="min"),
     CarSensorSpec("obc_6kw", "OBC 6kW", _ev_getter("obc_6kw"), transform=_to_int, unit_of_measurement="min"),
-    CarSensorSpec("car_gear", "Gear", _ev_getter("car_gear"), transform=_to_int),
+    CarSensorSpec("car_gear", "Gear", _ev_getter("car_gear"), transform=_gear_to_str),
     CarSensorSpec("soh", "Battery Health", _ev_getter("soh"), transform=_round_1, unit_of_measurement=PERCENTAGE),
     CarSensorSpec("wh_content", "Remaining Energy", _ev_getter("wh_content"), transform=_to_kwh, unit_of_measurement="kWh"),
     CarSensorSpec("cap_bars", "Capacity Bars", _ev_getter("cap_bars"), transform=_to_int, state_class=SensorStateClass.MEASUREMENT),
