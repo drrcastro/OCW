@@ -1,10 +1,10 @@
 {
-  "domain": "ha_opencarwings",
+  "domain": "opencarwings",
   "name": "OpenCARWINGS Integration",
-  "version": "0.5.3",
+  "version": "0.1.0",
   "config_flow": true,
   "iot_class": "cloud_polling",
-  "documentation": "https://github.com/czapeczek/ha_opencarwings",
-  "codeowners": ["@czapeczek", "@tomeczko"],
+  "documentation": "https://github.com/drrcastro/OCW",
+  "codeowners": ["@drrcastro"],
   "platforms": ["sensor", "switch", "device_tracker", "button"]
 }
