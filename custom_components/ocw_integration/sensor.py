@@ -17,10 +17,12 @@ except Exception:  # pragma: no cover
         DIAGNOSTIC = "diagnostic"
 
 try:
-    from homeassistant.components.sensor import SensorDeviceClass
+    from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 except Exception:  # pragma: no cover
     class SensorDeviceClass:  # type: ignore
         BATTERY = "battery"
+    class SensorStateClass:  # type: ignore
+        MEASUREMENT = "measurement"
 
 from . import DOMAIN
 
@@ -152,6 +154,7 @@ class CarSensorSpec:
     value: Callable[[dict], Any]
     transform: Optional[Callable[[Any], Any]] = None
     device_class: Optional[str] = None
+    state_class: Optional[str] = None
     unit_of_measurement: Optional[str] = None
     icon: Optional[str] = None
 
@@ -227,7 +230,7 @@ CAR_SENSORS: list[CarSensorSpec] = [
     ),
     CarSensorSpec("soc", "State of Charge", _ev_getter("soc"), transform=_round_1, device_class=SensorDeviceClass.BATTERY, unit_of_measurement=PERCENTAGE),
     CarSensorSpec("soc_display", "State of Charge Display", _ev_getter("soc_display"), transform=_round_1, device_class=SensorDeviceClass.BATTERY, unit_of_measurement=PERCENTAGE),
-    CarSensorSpec("charge_bars", "Charge Bars", _ev_getter("charge_bars")),
+    CarSensorSpec("charge_bars", "Charge Bars", _ev_getter("charge_bars"), transform=_to_int, state_class=SensorStateClass.MEASUREMENT),
     CarSensorSpec("plugged_in", "Charge Cable", _ev_getter("plugged_in"), transform=_plugged_to_str),
     CarSensorSpec("charging", "Charging", _ev_getter("charging")),
     CarSensorSpec("charge_finish", "Charge Finish", _ev_getter("charge_finish")),
@@ -242,10 +245,10 @@ CAR_SENSORS: list[CarSensorSpec] = [
     CarSensorSpec("car_gear", "Gear", _ev_getter("car_gear"), transform=_to_int),
     CarSensorSpec("soh", "Battery Health", _ev_getter("soh"), transform=_round_1, unit_of_measurement=PERCENTAGE),
     CarSensorSpec("wh_content", "Remaining Energy", _ev_getter("wh_content"), transform=_to_kwh, unit_of_measurement="kWh"),
-    CarSensorSpec("cap_bars", "Capacity Bars", _ev_getter("cap_bars"), transform=_to_int),
-    CarSensorSpec("gids", "Available GIDs", _ev_getter("gids"), transform=_to_int),
-    CarSensorSpec("counter", "Battery Counter", _ev_getter("counter"), transform=_to_int),
-    CarSensorSpec("max_gids", "Maximum GIDs", _ev_getter("max_gids"), transform=_to_int),
+    CarSensorSpec("cap_bars", "Capacity Bars", _ev_getter("cap_bars"), transform=_to_int, state_class=SensorStateClass.MEASUREMENT),
+    CarSensorSpec("gids", "Available GIDs", _ev_getter("gids"), transform=_to_int, state_class=SensorStateClass.MEASUREMENT),
+    CarSensorSpec("counter", "Battery Counter", _ev_getter("counter"), transform=_to_int, state_class=SensorStateClass.MEASUREMENT),
+    CarSensorSpec("max_gids", "Maximum GIDs", _ev_getter("max_gids"), transform=_to_int, state_class=SensorStateClass.MEASUREMENT),
     CarSensorSpec("param21", "Battery Parameter 21", _ev_getter("param21"), transform=_to_int),
     CarSensorSpec("cabin_temp", "Cabin Temperature", _ev_getter("cabin_temp"), transform=_to_float, unit_of_measurement="°C"),
     CarSensorSpec("force_soc_display", "Forced SOC Display", _ev_getter("force_soc_display")),
@@ -272,6 +275,8 @@ class CarValueSensor(OpenCarwingsCarEntity, SensorEntity):
         self._attr_unique_id = f"ocw_integration_{spec.key}_{vin}"
         if spec.device_class:
             self._attr_device_class = spec.device_class
+        if spec.state_class:
+            self._attr_state_class = spec.state_class
         if spec.unit_of_measurement:
             self._attr_native_unit_of_measurement = spec.unit_of_measurement
         self._attr_icon = spec.icon or SENSOR_ICONS.get(spec.key)
