@@ -149,6 +149,7 @@ class CarSensorSpec:
     transform: Optional[Callable[[Any], Any]] = None
     device_class: Optional[str] = None
     unit_of_measurement: Optional[str] = None
+    icon: Optional[str] = None
 
 
 def _to_int(v: Any) -> int | None:
@@ -162,6 +163,47 @@ def _to_int(v: Any) -> int | None:
 
 def _plugged_to_str(v: Any) -> str:
     return "plugged" if bool(v) else "unplugged"
+
+
+SENSOR_ICONS = {
+    "range_acon": "mdi:car-speed-limiter",
+    "range_acoff": "mdi:car-speed-limiter",
+    "soc": "mdi:battery-medium",
+    "soc_display": "mdi:battery-medium",
+    "charge_bars": "mdi:battery-charging",
+    "plugged_in": "mdi:ev-plug-type2",
+    "charging": "mdi:battery-charging",
+    "charge_finish": "mdi:battery-check",
+    "quick_charging": "mdi:flash",
+    "ac_status": "mdi:air-conditioner",
+    "eco_mode": "mdi:leaf",
+    "car_running": "mdi:engine",
+    "odometer": "mdi:counter",
+    "full_chg_time": "mdi:timer-sand",
+    "limit_chg_time": "mdi:timer-cog",
+    "obc_6kw": "mdi:ev-station",
+    "car_gear": "mdi:car-shift-pattern",
+    "soh": "mdi:battery-heart-variant",
+    "wh_content": "mdi:lightning-bolt",
+    "cap_bars": "mdi:battery-outline",
+    "gids": "mdi:battery-arrow-down",
+    "counter": "mdi:counter",
+    "max_gids": "mdi:battery-arrow-up",
+    "param21": "mdi:tune-variant",
+    "cabin_temp": "mdi:car-seat-cooler",
+    "force_soc_display": "mdi:format-display",
+    "obc_6kw_avail": "mdi:ev-station",
+    "batt_heater_avail": "mdi:radiator",
+    "batt_heater_status": "mdi:radiator",
+    "signal_level": "mdi:signal-cellular-3",
+    "tpms_fl": "mdi:tire",
+    "tpms_fr": "mdi:tire",
+    "tpms_rl": "mdi:tire",
+    "tpms_rr": "mdi:tire",
+    "tpms_light": "mdi:tire-alert",
+    "maintenance_alert": "mdi:car-wrench",
+    "health_mileage": "mdi:clipboard-pulse",
+}
 
 
 CAR_SENSORS: list[CarSensorSpec] = [
@@ -228,6 +270,7 @@ class CarValueSensor(OpenCarwingsCarEntity, SensorEntity):
             self._attr_device_class = spec.device_class
         if spec.unit_of_measurement:
             self._attr_native_unit_of_measurement = spec.unit_of_measurement
+        self._attr_icon = spec.icon or SENSOR_ICONS.get(spec.key)
 
     @property
     def name(self) -> str:
@@ -255,6 +298,7 @@ class CarStatusSensor(OpenCarwingsCarEntity, SensorEntity):
     def __init__(self, coordinator, entry_id: str, vin: str, seed_car: dict | None = None) -> None:
         super().__init__(coordinator, entry_id, vin, seed_car)
         self._attr_unique_id = f"ha_opencarwings_status_{vin}"
+        self._attr_icon = "mdi:car-info"
 
     @property
     def name(self) -> str:
@@ -296,6 +340,7 @@ class CarDTCStatusSensor(OpenCarwingsCarEntity, SensorEntity):
     def __init__(self, coordinator, entry_id: str, vin: str, seed_car: dict | None = None) -> None:
         super().__init__(coordinator, entry_id, vin, seed_car)
         self._attr_unique_id = f"ha_opencarwings_dtc_{vin}"
+        self._attr_icon = "mdi:alert-circle"
 
     @property
     def name(self) -> str:
@@ -333,6 +378,7 @@ class CarVINSensor(OpenCarwingsCarEntity, SensorEntity):
     def __init__(self, coordinator, entry_id: str, vin: str, seed_car: dict | None = None) -> None:
         super().__init__(coordinator, entry_id, vin, seed_car)
         self._attr_unique_id = f"ha_opencarwings_vin_{vin}"
+        self._attr_icon = "mdi:identifier"
 
     @property
     def name(self) -> str:
@@ -353,6 +399,7 @@ class CarLastUpdatedSensor(OpenCarwingsCarEntity, SensorEntity):
     def __init__(self, coordinator, entry_id: str, vin: str, seed_car: dict | None = None) -> None:
         super().__init__(coordinator, entry_id, vin, seed_car)
         self._attr_unique_id = f"ha_opencarwings_last_updated_{vin}"
+        self._attr_icon = "mdi:update"
 
     @property
     def name(self) -> str:
@@ -380,6 +427,7 @@ class CarLastRequestedSensor(OpenCarwingsCarEntity, SensorEntity):
     def __init__(self, coordinator, entry_id: str, vin: str, seed_car: dict | None = None) -> None:
         super().__init__(coordinator, entry_id, vin, seed_car)
         self._attr_unique_id = f"ha_opencarwings_last_requested_{vin}"
+        self._attr_icon = "mdi:clock-outline"
 
     @property
     def name(self) -> str:
@@ -406,6 +454,7 @@ class CarListSensor(SensorEntity):
         self._coordinator = coordinator
         self._cars = cars or []
         self._attr_unique_id = f"ha_opencarwings_{entry_id}_cars"
+        self._attr_icon = "mdi:car-multiple"
 
     @property
     def name(self) -> str:
