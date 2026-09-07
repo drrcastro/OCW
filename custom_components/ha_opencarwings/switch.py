@@ -5,6 +5,7 @@ from typing import Any
 import logging
 
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import DOMAIN
 
@@ -26,10 +27,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
     async_add_entities(entities)
 
 
-class CarACSwitch(SwitchEntity):
+class CarACSwitch(CoordinatorEntity, SwitchEntity):
     """Represents the car A/C as a switch."""
 
     def __init__(self, entry_id: str, car: dict, coordinator=None) -> None:
+        if coordinator is not None:
+            CoordinatorEntity.__init__(self, coordinator)
         self._entry_id = entry_id
         self._car = car
         self._vin = car.get("vin")
@@ -49,7 +52,15 @@ class CarACSwitch(SwitchEntity):
         car = self._get_car()
         ev_info = car.get("ev_info") or {}
         value = ev_info.get("ac_status") if isinstance(ev_info, dict) else None
-        return bool(value) if value is not None else None
+        if value is None:
+            return None
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"0", "false", "off", "no", "inactive"}:
+                return False
+            if normalized in {"1", "true", "on", "yes", "active"}:
+                return True
+        return bool(value)
 
     @property
     def device_info(self) -> dict[str, Any]:

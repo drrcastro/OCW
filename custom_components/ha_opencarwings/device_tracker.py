@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.device_tracker import SourceType
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 try:
     from homeassistant.components.device_tracker.config_entry import TrackerEntity
 except Exception:  # pragma: no cover - tests running without hass stubs
@@ -26,22 +27,33 @@ async def async_setup_entry(hass, entry, async_add_entities):
         cars = getattr(coordinator, "data", None) or cars
 
     # Only create trackers for cars with a VIN
-    entities = [CarTracker(entry.entry_id, car) for car in cars if car.get("vin")]
+    entities = [CarTracker(entry.entry_id, car, coordinator=coordinator) for car in cars if car.get("vin")]
     # Tests call entity methods directly; set hass on the entities for testability
     for ent in entities:
         ent.hass = hass
     async_add_entities(entities)
 
-class CarTracker(TrackerEntity):
-    def __init__(self, entry_id: str, car: dict) -> None:
+class CarTracker(CoordinatorEntity, TrackerEntity):
+    def __init__(self, entry_id: str, car: dict, coordinator=None) -> None:
+        if coordinator is not None:
+            CoordinatorEntity.__init__(self, coordinator)
         self._entry_id = entry_id
         self._car = car
         self._vin = car.get("vin")
 
+    def _get_car(self) -> dict:
+        coordinator = getattr(self, "coordinator", None)
+        if coordinator and getattr(coordinator, "data", None):
+            for car in coordinator.data:
+                if car.get("vin") == self._vin:
+                    return {**self._car, **car}
+        return self._car
+
     @property
     def name(self) -> str:
         # Prefer the car nickname, then model name, then a fallback that includes the VIN
-        return f"{self._car.get('nickname') or self._car.get('model_name') or f'Car {self._vin}'} Tracker"
+        car = self._get_car()
+        return f"{car.get('nickname') or car.get('model_name') or f'Car {self._vin}'} Tracker"
 
     @property
     def unique_id(self) -> str:
@@ -53,9 +65,10 @@ class CarTracker(TrackerEntity):
 
     def _get_lat_lon(self):
         # Look for various forms of last location in the car data.
-        loc = self._car.get("last_location") or self._car.get("location")
-        if loc is None and isinstance(self._car.get("ev_info"), dict):
-            loc = self._car.get("ev_info", {}).get("last_location")
+        car = self._get_car()
+        loc = car.get("last_location") or car.get("location")
+        if loc is None and isinstance(car.get("ev_info"), dict):
+            loc = car.get("ev_info", {}).get("last_location")
 
         # If the last_location is a list, use the first element.
         if isinstance(loc, list) and len(loc) > 0:
@@ -90,7 +103,8 @@ class CarTracker(TrackerEntity):
     @property
     def location_name(self) -> str | None:
         # opcjonalnie: pokaże nazwę strefy / opis
-        loc = self._car.get("last_location") or self._car.get("location")
+        car = self._get_car()
+        loc = car.get("last_location") or car.get("location")
         if isinstance(loc, dict):
             return loc.get("name") or loc.get("address")
         return None
@@ -100,28 +114,30 @@ class CarTracker(TrackerEntity):
         # Expose VIN and basic car data so it's visible on the entity, and
         # provide the raw last location under a single key for callers that
         # want to inspect the original payload.
+        car = self._get_car()
         raw_loc = None
         raw_src = None
-        if isinstance(self._car.get("last_location"), dict):
-            raw_loc = self._car.get("last_location")
+        if isinstance(car.get("last_location"), dict):
+            raw_loc = car.get("last_location")
             raw_src = "last_location"
-        elif isinstance(self._car.get("last_location"), list) and len(self._car.get("last_location")) > 0:
-            raw_loc = self._car.get("last_location")[0]
+        elif isinstance(car.get("last_location"), list) and len(car.get("last_location")) > 0:
+            raw_loc = car.get("last_location")[0]
             raw_src = "last_location"
-        elif isinstance(self._car.get("ev_info"), dict):
-            raw_loc = self._car.get("ev_info", {}).get("last_location")
+        elif isinstance(car.get("ev_info"), dict):
+            raw_loc = car.get("ev_info", {}).get("last_location")
             if raw_loc is not None:
                 raw_src = "ev_info.last_location"
 
-        return {**self._car, "last_location_raw": raw_loc, "last_location_source": raw_src}
+        return {**car, "last_location_raw": raw_loc, "last_location_source": raw_src}
 
     @property
     def device_info(self) -> dict[str, Any]:
         # Attach the tracker to the car device so it appears under the same
         # device as the per-car buttons (use the VIN as the device identifier).
+        car = self._get_car()
         return {
             "identifiers": {(DOMAIN, self._vin)},
-            "name": self._car.get("nickname") or self._car.get("model_name"),
-            "manufacturer": self._car.get("make"),
-            "model": self._car.get("model_name"),
+            "name": car.get("nickname") or car.get("model_name"),
+            "manufacturer": car.get("make"),
+            "model": car.get("model_name"),
         }

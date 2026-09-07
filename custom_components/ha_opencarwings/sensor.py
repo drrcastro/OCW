@@ -94,6 +94,10 @@ def _tpms_bar(v: Any) -> float | None:
 def _round_1(v: Any) -> float | None:
     if v is None:
         return None
+    try:
+        return round(float(v), 1)
+    except Exception:
+        return None
 
 
 def _to_kwh(v: Any) -> float | None:
@@ -232,9 +236,9 @@ CAR_SENSORS: list[CarSensorSpec] = [
     CarSensorSpec("eco_mode", "Eco Mode", _ev_getter("eco_mode")),
     CarSensorSpec("car_running", "Running", _ev_getter("car_running")),
     CarSensorSpec("odometer", "Odometer", lambda car: car.get("odometer"), transform=_to_int, unit_of_measurement="km",),
-    CarSensorSpec("full_chg_time", "Full Charge Time", _ev_getter("full_chg_time")),
-    CarSensorSpec("limit_chg_time", "Limit Charge Time", _ev_getter("limit_chg_time")),
-    CarSensorSpec("obc_6kw", "OBC 6kW", _ev_getter("obc_6kw")),
+    CarSensorSpec("full_chg_time", "Full Charge Time", _ev_getter("full_chg_time"), transform=_to_int, unit_of_measurement="min"),
+    CarSensorSpec("limit_chg_time", "Limit Charge Time", _ev_getter("limit_chg_time"), transform=_to_int, unit_of_measurement="min"),
+    CarSensorSpec("obc_6kw", "OBC 6kW", _ev_getter("obc_6kw"), transform=_to_int, unit_of_measurement="min"),
     CarSensorSpec("car_gear", "Gear", _ev_getter("car_gear"), transform=_to_int),
     CarSensorSpec("soh", "Battery Health", _ev_getter("soh"), transform=_round_1, unit_of_measurement=PERCENTAGE),
     CarSensorSpec("wh_content", "Remaining Energy", _ev_getter("wh_content"), transform=_to_kwh, unit_of_measurement="kWh"),
