@@ -2,5 +2,5 @@
   "name": "OpenCarWings",
   "content_in_root": false,
   "render_readme": true,
-  "domains": ["ha_opencarwings"]
+  "domains": ["ocw_integration"]
 }

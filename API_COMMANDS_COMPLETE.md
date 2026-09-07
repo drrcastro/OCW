@@ -294,7 +294,7 @@ class OpenCarWingsRefreshButton(ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_refresh_{self._entry_id}"
+        return f"ocw_integration_refresh_{self._entry_id}"
 
     async def async_press(self) -> None:
         """Press the button to force an immediate coordinator refresh."""
@@ -328,7 +328,7 @@ class CarRefreshButton(ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_car_refresh_{self._vin}"
+        return f"ocw_integration_car_refresh_{self._vin}"
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -374,7 +374,7 @@ class CarChargeStartButton(ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_car_chargestart_{self._vin}"
+        return f"ocw_integration_car_chargestart_{self._vin}"
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -420,7 +420,7 @@ class CarChargeStart80Button(ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_car_chargestart80_{self._vin}"
+        return f"ocw_integration_car_chargestart80_{self._vin}"
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -466,7 +466,7 @@ class CarACOnButton(ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_car_ac_on_{self._vin}"
+        return f"ocw_integration_car_ac_on_{self._vin}"
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -512,7 +512,7 @@ class CarACOffButton(ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_car_ac_off_{self._vin}"
+        return f"ocw_integration_car_ac_off_{self._vin}"
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -558,7 +558,7 @@ class CarHornButton(ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_car_horn_{self._vin}"
+        return f"ocw_integration_car_horn_{self._vin}"
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -605,7 +605,7 @@ class CarLightsButton(ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_car_lights_{self._vin}"
+        return f"ocw_integration_car_lights_{self._vin}"
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -652,7 +652,7 @@ class CarHornLightsButton(ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_car_horn_lights_{self._vin}"
+        return f"ocw_integration_car_horn_lights_{self._vin}"
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -699,7 +699,7 @@ class CarStopHornLightsButton(ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_car_stop_horn_lights_{self._vin}"
+        return f"ocw_integration_car_stop_horn_lights_{self._vin}"
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -746,7 +746,7 @@ class CarDoorUnlockButton(ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_car_door_unlock_{self._vin}"
+        return f"ocw_integration_car_door_unlock_{self._vin}"
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -793,7 +793,7 @@ class CarDoorLockButton(ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_car_door_lock_{self._vin}"
+        return f"ocw_integration_car_door_lock_{self._vin}"
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -840,7 +840,7 @@ class CarRemoteStartButton(ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_car_remote_start_{self._vin}"
+        return f"ocw_integration_car_remote_start_{self._vin}"
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -887,7 +887,7 @@ class CarRemoteStopButton(ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_car_remote_stop_{self._vin}"
+        return f"ocw_integration_car_remote_stop_{self._vin}"
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -974,7 +974,7 @@ class CarACSwitch(SwitchEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"ha_opencarwings_ac_{self._vin}"
+        return f"ocw_integration_ac_{self._vin}"
 
     @property
     def is_on(self) -> bool:

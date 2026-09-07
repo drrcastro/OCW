@@ -1,4 +1,4 @@
-# OpenCARWINGS Home Assistant Integration
+# OpenCarWings Home Assistant Integration
 
 [![GitHub Release](https://img.shields.io/github/v/release/drrcastro/OCW?style=for-the-badge)](https://github.com/drrcastro/OCW/releases)
 [![GitHub Activity](https://img.shields.io/github/commit-activity/y/drrcastro/OCW?style=for-the-badge)](https://github.com/drrcastro/OCW/commits/main)
@@ -49,17 +49,17 @@ Full car control via the OpenCARWINGS command endpoint:
 3. Add the following repository URL:
    `https://github.com/drrcastro/OCW`
 4. Select category: **Integration** and click **Add**.
-5. Close the modal, search for **OpenCARWINGS** in HACS, and click **Download**.
+5. Close the modal, search for **OpenCarWings** in HACS, and click **Download**.
 6. **Restart Home Assistant**.
 7. Go to **Settings → Devices & Services → Add Integration**.
-8. Search for **OpenCARWINGS** and follow the setup instructions.
+8. Search for **OpenCarWings** and follow the setup instructions.
 
 ### Option 2: Manual Installation
 1. Clone or download this repository.
-2. Copy the `custom_components/ha_opencarwings` folder to your `<config>/custom_components/` directory on your Home Assistant host.
+2. Copy the `custom_components/ocw_integration` folder to your `<config>/custom_components/` directory on your Home Assistant host.
 3. Restart Home Assistant.
 4. Go to **Settings → Devices & Services → Add Integration**.
-5. Search for **OpenCARWINGS** and follow the setup flow.
+5. Search for **OpenCarWings** and follow the setup flow.
 
 ## ⚙️ Configuration
 
@@ -79,8 +79,8 @@ The per-car **Last Updated** and **Last Requested** sensors are diagnostic times
 recorder:
   exclude:
     entity_globs:
-      - "sensor.ha_opencarwings_last_updated_*"
-      - "sensor.ha_opencarwings_last_requested_*"
+      - "sensor.ocw_integration_last_updated_*"
+      - "sensor.ocw_integration_last_requested_*"
 ```
 
 ## 🙏 Credits & Acknowledgements
