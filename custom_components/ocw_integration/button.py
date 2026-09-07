@@ -54,6 +54,7 @@ class OpenCarWingsRefreshButton(ButtonEntity):
     def __init__(self, entry_id: str, coordinator=None) -> None:
         self._entry_id = entry_id
         self._coordinator = coordinator
+        self._attr_icon = "mdi:refresh"
 
     @property
     def name(self) -> str:
@@ -86,6 +87,7 @@ class CarRefreshButton(ButtonEntity):
         self._entry_id = entry_id
         self._car = car
         self._vin = car.get("vin")
+        self._attr_icon = "mdi:car-refresh"
 
     @property
     def name(self) -> str:
@@ -158,6 +160,7 @@ class CarChargeStartButton(ButtonEntity):
         self._car = car
         self._vin = car.get("vin")
         self._command_type = 2  # Charge start
+        self._attr_icon = "mdi:battery-charging"
 
     @property
     def name(self) -> str:
@@ -208,6 +211,7 @@ class CarChargeStart80Button(ButtonEntity):
         self._car = car
         self._vin = car.get("vin")
         self._command_type = 6  # Charge start 80%
+        self._attr_icon = "mdi:battery-80"
 
     @property
     def name(self) -> str:
@@ -254,6 +258,7 @@ class CarACOnButton(ButtonEntity):
         self._car = car
         self._vin = car.get("vin")
         self._command_type = 3  # A/C on
+        self._attr_icon = "mdi:air-conditioner"
 
     @property
     def name(self) -> str:
@@ -300,6 +305,7 @@ class CarACOffButton(ButtonEntity):
         self._car = car
         self._vin = car.get("vin")
         self._command_type = 4  # A/C off
+        self._attr_icon = "mdi:air-conditioner"
 
     @property
     def name(self) -> str:
@@ -346,6 +352,7 @@ class CarHornButton(ButtonEntity):
         self._car = car
         self._vin = car.get("vin")
         self._command_type = 9  # Horn
+        self._attr_icon = "mdi:bullhorn"
 
     @property
     def name(self) -> str:
@@ -393,6 +400,7 @@ class CarLightsButton(ButtonEntity):
         self._car = car
         self._vin = car.get("vin")
         self._command_type = 10  # Lights
+        self._attr_icon = "mdi:car-light-high"
 
     @property
     def name(self) -> str:
@@ -440,6 +448,7 @@ class CarHornLightsButton(ButtonEntity):
         self._car = car
         self._vin = car.get("vin")
         self._command_type = 11  # Horn & Lights
+        self._attr_icon = "mdi:alarm-light"
 
     @property
     def name(self) -> str:
@@ -487,6 +496,7 @@ class CarStopHornLightsButton(ButtonEntity):
         self._car = car
         self._vin = car.get("vin")
         self._command_type = 12  # Stop Horn & light
+        self._attr_icon = "mdi:alarm-light-off"
 
     @property
     def name(self) -> str:
@@ -534,6 +544,7 @@ class CarDoorUnlockButton(ButtonEntity):
         self._car = car
         self._vin = car.get("vin")
         self._command_type = 7  # Door unlock
+        self._attr_icon = "mdi:lock-open-variant"
 
     @property
     def name(self) -> str:
@@ -581,6 +592,7 @@ class CarDoorLockButton(ButtonEntity):
         self._car = car
         self._vin = car.get("vin")
         self._command_type = 8  # Door lock
+        self._attr_icon = "mdi:lock"
 
     @property
     def name(self) -> str:
@@ -628,6 +640,7 @@ class CarRemoteStartButton(ButtonEntity):
         self._car = car
         self._vin = car.get("vin")
         self._command_type = 13  # Remote Start
+        self._attr_icon = "mdi:engine"
 
     @property
     def name(self) -> str:
@@ -675,6 +688,7 @@ class CarRemoteStopButton(ButtonEntity):
         self._car = car
         self._vin = car.get("vin")
         self._command_type = 14  # Remote Stop
+        self._attr_icon = "mdi:engine-off"
 
     @property
     def name(self) -> str:

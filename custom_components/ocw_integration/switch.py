@@ -41,6 +41,7 @@ class CarACSwitch(CoordinatorEntity, SwitchEntity):
         self._car = car
         self._vin = car.get("vin")
         self._coordinator = coordinator
+        self._attr_icon = "mdi:air-conditioner"
 
     @property
     def name(self) -> str:
