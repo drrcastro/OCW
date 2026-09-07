@@ -10,14 +10,14 @@
 [![Community Forum][forum-shield]][forum]
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 
-Nice, lightweight Home Assistant integration that connects to the OpenCARWINGS API to expose your Nissan (or compatible) cars as devices in Home Assistant.
+Lightweight Home Assistant integration that connects to the OpenCARWINGS API to expose your Nissan (or compatible) cars as devices in Home Assistant.
 
----
-
-## Support the project ☕
-
-This is my first integration for HA. If you find it useful I'd really appreciate if you buy me a coffe:
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/czapeczek)
+**Features:**
+- 🚗 Full car control: charge, A/C, doors, horn, lights, remote start/stop
+- 🔑 Simple API Key authentication (no password storage)
+- 📊 Real-time sensor data: battery, range, charging status, location
+- 🎛️ Easy setup via UI integration flow
+- ⚡ Automatic data refresh with configurable intervals
 
 
 ---
@@ -35,8 +35,14 @@ Per car the integration currently exposes:
   - A top-level `OpenCARWINGS Cars` sensor listing your cars and VINs
 - Device tracker: car GPS (uses `last_location` / `location` returned by the API). The tracker entity is attached to the same car device as the per-car buttons and shares the car VIN as the device identifier; the tracker entity itself keeps a stable `unique_id` of the form `ha_opencarwings_tracker_<VIN>`. The visible name prefers the car's `nickname` if present, otherwise it falls back to `model_name` (for example, "MyCar Tracker").
 - Switch: A/C control (on/off) — sends commands to the car via the OpenCARWINGS command endpoint
-- Button: **Manual refresh** — a per-integration button is available to force an immediate refresh from the OpenCARWINGS service (unique id: `ha_opencarwings_refresh_<entry_id>`).
-- Button: **Per-car "Request refresh"** — each car has a per-vehicle button labeled like `Request data refresh for <nickname|model>` (for example, "Request data refresh for MyCar"). Pressing it sends a "Refresh data" command to OpenCARWINGS (unique id: `ha_opencarwings_car_refresh_<VIN>`).
+- Buttons: **Full car control** — send any command available on the OpenCARWINGS API:
+  - 🔄 **Data refresh** — request immediate data sync from the car
+  - 🔋 **Charge commands** — Charge start, Charge start 80%
+  - ❄️ **Climate** — A/C on, A/C off (also available as switch)
+  - 🚪 **Door control** — Unlock/Lock doors (requires PIN)
+  - 🔊 **Horn & Lights** — Horn, Lights, Horn & Lights, Stop (requires PIN)
+  - 🚗 **Engine control** — Remote Start, Remote Stop (requires PIN)
+  - ℹ️ **Integration button** — Manual refresh for all cars (unique id: `ha_opencarwings_refresh_<entry_id>`)
 
 ---
 
@@ -75,16 +81,28 @@ These entities are created per-VIN and appear as devices in the Integrations UI.
 
 ## Installation 🔧
 
-Choose one of the options below:
+### Option 1: HACS (Recommended)
+1. Open **HACS** in Home Assistant
+2. Go to **Integrations** → **⋯** (menu) → **Custom repositories**
+3. Add repository:
+   ```
+   https://github.com/drrcastro/ha_opencarwings
+   ```
+4. Select category: **Integration**
+5. Click **Create** → Find **OpenCARWINGS** → **Install**
+6. **Restart Home Assistant**
+7. Go to **Settings → Devices & Services → Create Integration**
+8. Search for **OpenCARWINGS** and follow setup
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.][hacs-repo-badge]][hacs-install]
-
-1. HACS (recommended)
-   - In HACS: Integrations → three dots → Custom repositories → Add this repository as category "Integration" → Install → Restart Home Assistant
-2. Manual
-   - Copy the `custom_components/ha_opencarwings` directory into `<config>/custom_components/` on your Home Assistant host
-   - Restart Home Assistant
-   - Go to Settings → Devices & Services → Add Integration → search for **OpenCARWINGS** and follow the setup flow
+### Option 2: Manual Installation
+1. Download the repository or clone it:
+   ```bash
+   git clone https://github.com/drrcastro/ha_opencarwings.git
+   ```
+2. Copy `custom_components/ha_opencarwings` to `<config>/custom_components/` on your Home Assistant host
+3. Restart Home Assistant
+4. Go to **Settings → Devices & Services → Add Integration**
+5. Search for **OpenCARWINGS** and follow the setup flow
 
 ---
 
@@ -92,11 +110,19 @@ Choose one of the options below:
 
 Setup is done via the UI. You will need:
 
-- **Username** and **Password** for your OpenCARWINGS account
-- **Scan interval** (polling frequency, default: 15 minutes). The setup and options flows present a friendly select with labeled choices (for example: "1 minute", "15 minutes (default)", "1 hour", "1 day").
-- **API base URL** (optional — defaults to the known OpenCARWINGS endpoint)
+### Authentication
+- **API Key** — Personal API key from your OpenCARWINGS account
+  - 🔗 Get it at: [https://opencarwings.viaaq.eu](https://opencarwings.viaaq.eu) → Account Settings → API Token
+  - Copy the full token (format: `Token xxxxxxxxxxxxxx`)
+  - ✅ Works with 2FA enabled
+  - ✅ No password storage needed
 
-The integration obtains JWT tokens (access & refresh) during setup and refreshes tokens automatically.
+### Options
+- **Scan interval** (polling frequency, default: 15 minutes). The setup and options flows present a friendly select with labeled choices (for example: "1 minute", "15 minutes (default)", "1 hour", "1 day").
+- **API base URL** (optional — defaults to `https://opencarwings.viaaq.eu`)
+
+### Commands Requiring PIN
+Some commands (door unlock/lock, horn, lights, remote start/stop) require a **command PIN** to be set in your OpenCARWINGS account portal. This is a security measure to prevent unauthorized access.
 
 ---
 
@@ -109,9 +135,16 @@ The integration obtains JWT tokens (access & refresh) during setup and refreshes
 
 ## Reporting issues & Contributing 🤝
 
-Found a bug or want a feature? Please open an issue or a PR at: https://github.com/czapeczek/ha_opencarwings
+Found a bug or want a feature? Please open an issue or a PR at: https://github.com/drrcastro/ha_opencarwings
 
 Contributions, fixes and improvements are welcome!
+
+### Recent Updates 📝
+- ✅ Full car control commands (all 13 types)
+- ✅ API Key authentication (simpler setup)
+- ✅ Automatic PIN handling for secure commands
+- ✅ Per-car command buttons
+- ✅ A/C control via switch or button
 
 ---
 
@@ -120,13 +153,13 @@ Contributions, fixes and improvements are welcome!
 A big thank you to the OpenCARWINGS project for providing the reverse-engineered API that makes this integration possible: https://github.com/developerfromjokela/opencarwings
 
 <!-- Badges -->
-[releases-shield]: https://img.shields.io/github/v/release/czapeczek/ha_opencarwings?style=for-the-badge
-[releases]: https://github.com/czapeczek/ha_opencarwings/releases
+[releases-shield]: https://img.shields.io/github/v/release/drrcastro/ha_opencarwings?style=for-the-badge
+[releases]: https://github.com/drrcastro/ha_opencarwings/releases
 
-[commits-shield]: https://img.shields.io/github/commit-activity/y/czapeczek/ha_opencarwings?style=for-the-badge
-[commits]: https://github.com/czapeczek/ha_opencarwings/commits/main
+[commits-shield]: https://img.shields.io/github/commit-activity/y/drrcastro/ha_opencarwings?style=for-the-badge
+[commits]: https://github.com/drrcastro/ha_opencarwings/commits/main
 
-[license-shield]: https://img.shields.io/github/license/czapeczek/ha_opencarwings?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/drrcastro/ha_opencarwings?style=for-the-badge
 
 [maintenance-shield]: https://img.shields.io/badge/maintained-yes-green.svg?style=for-the-badge
 
@@ -136,4 +169,4 @@ A big thank you to the OpenCARWINGS project for providing the reverse-engineered
 [forum-shield]: https://img.shields.io/badge/community-forum-blue.svg?style=for-the-badge
 [forum]: https://community.home-assistant.io/
 [hacs-repo-badge]: https://my.home-assistant.io/badges/hacs_repository.svg
-[hacs-install]: https://my.home-assistant.io/redirect/hacs_repository/?owner=czapeczek&repository=ha_opencarwings&category=Integration
+[hacs-install]: https://my.home-assistant.io/redirect/hacs_repository/?owner=drrcastro&repository=ha_opencarwings&category=Integration
