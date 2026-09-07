@@ -28,8 +28,18 @@ Per car the integration currently exposes:
 
 - Sensors
   - Range (A/C on / A/C off)
+  - Cabin temperature
+  - State of health, remaining energy, capacity bars, GIDs and maximum GIDs
+  - Gear, battery counter and battery parameters
+  - Battery heater availability and active state
   - Charge cable plugged in (plugged / unplugged)
+  - Charging, quick charging, charge finish and OBC status
   - High-level status (charging / running / ac_on / idle)
+  - TCU signal level
+  - Tyre pressure for all four wheels (TPMS)
+  - TPMS and maintenance warnings
+  - Diagnostic trouble code count, with reported codes as attributes
+  - Health report mileage
   - **Per-car "Last Updated"** (diagnostic): reports the ISO 8601 timestamp of the last direct reading from the car. The sensor is created per VIN, shows the most recent timestamp found in `ev_info.last_updated`, `location.last_updated`, or `last_connection`, and has the unique id pattern `ha_opencarwings_last_updated_<VIN>`.
   - **Per-car "Last Requested"** (diagnostic): reports the last time the integration requested data from the API (coordinator's last update time). The sensor is created per VIN and has the unique id pattern `ha_opencarwings_last_requested_<VIN>`.
   - A top-level `OpenCARWINGS Cars` sensor listing your cars and VINs
