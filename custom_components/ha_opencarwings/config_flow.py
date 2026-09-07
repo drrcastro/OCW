@@ -3,7 +3,6 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 
 from .api import OpenCarWingsAPI, AuthenticationError, DEFAULT_API_BASE
 
@@ -34,32 +33,32 @@ class OpenCARWINGSConfigFlow(config_entries.ConfigFlow, domain="ha_opencarwings"
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
-        """Handle the initial step where user provides credentials."""
+        """Handle the initial step where user provides API key."""
         errors = {}
         if user_input is not None:
-            username = user_input[CONF_USERNAME]
-            password = user_input[CONF_PASSWORD]
+            api_key = user_input.get("api_key", "").strip()
             api_base = user_input.get("api_base_url", DEFAULT_API_BASE_URL)
 
-            client = OpenCarWingsAPI(getattr(self, "hass", None), base_url=api_base)
-            try:
-                tokens = await client.async_obtain_token(username, password)
-            except AuthenticationError:
-                errors["base"] = "auth"
-            except Exception:  # pragma: no cover - fallback
-                errors["base"] = "unknown"
+            if not api_key:
+                errors["api_key"] = "required"
             else:
-                return self.async_create_entry(
-                    title=username,
-                    data={
-                        "username": username,
-                        "access_token": tokens.get("access"),
-                        "refresh_token": tokens.get("refresh"),
-                        # persist initial scan interval choice
-                        "scan_interval": user_input.get("scan_interval", DEFAULT_SCAN_INTERVAL_MIN),
-                        "api_base_url": api_base,
-                    },
-                )
+                client = OpenCarWingsAPI(getattr(self, "hass", None), base_url=api_base)
+                try:
+                    await client.async_validate_api_key(api_key)
+                except AuthenticationError:
+                    errors["base"] = "auth"
+                except Exception:  # pragma: no cover - fallback
+                    errors["base"] = "unknown"
+                else:
+                    return self.async_create_entry(
+                        title="OpenCARWINGS",
+                        data={
+                            "api_key": api_key,
+                            # persist initial scan interval choice
+                            "scan_interval": user_input.get("scan_interval", DEFAULT_SCAN_INTERVAL_MIN),
+                            "api_base_url": api_base,
+                        },
+                    )
 
         # Prefer to show a pretty select when Home Assistant's selector helpers
         # are available; fall back to a numeric choice list otherwise.
@@ -77,8 +76,7 @@ class OpenCARWINGSConfigFlow(config_entries.ConfigFlow, domain="ha_opencarwings"
 
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_USERNAME): str,
-                vol.Required(CONF_PASSWORD): str,
+                vol.Required("api_key"): str,
                 vol.Required("scan_interval", default=DEFAULT_SCAN_INTERVAL_MIN): scan_selector,
                 vol.Required("api_base_url", default=DEFAULT_API_BASE_URL): str,
             }
