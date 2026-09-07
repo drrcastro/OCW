@@ -26,6 +26,22 @@ async def test_ev_sensor_states():
             "full_chg_time": 30,
             "limit_chg_time": 60,
             "obc_6kw": 1,
+                "car_gear": 2,
+                "soh": 92,
+                "wh_content": 28400,
+                "cabin_temp": 23.5,
+                "batt_heater_status": True,
+            },
+            "signal_level": 4,
+            "veh_health": {
+                "tpms_fl": 240,
+                "tpms_fr": 238,
+                "tpms_rl": 242,
+                "tpms_rr": 241,
+                "tpms_light": False,
+                "maintenance_alert": True,
+                "dtc_short": [{"code": "P0001"}],
+                "dtc_long": [],
         }
     }]}}}})()
 
@@ -98,3 +114,11 @@ async def test_ev_sensor_states():
     # status sensor should reflect charging first
     status = next(x for x in added if x.unique_id == "ha_opencarwings_status_VIN1")
     assert _val(status) == "charging"
+
+    assert _val(next(x for x in added if x.unique_id == "ha_opencarwings_cabin_temp_VIN1")) == 23.5
+    assert _val(next(x for x in added if x.unique_id == "ha_opencarwings_soh_VIN1")) == 92
+    assert _val(next(x for x in added if x.unique_id == "ha_opencarwings_wh_content_VIN1")) == 28.4
+    assert _val(next(x for x in added if x.unique_id == "ha_opencarwings_tpms_fl_VIN1")) == 2.4
+    assert _val(next(x for x in added if x.unique_id == "ha_opencarwings_tpms_rr_VIN1")) == 2.41
+    assert _val(next(x for x in added if x.unique_id == "ha_opencarwings_maintenance_alert_VIN1")) is True
+    assert _val(next(x for x in added if x.unique_id == "ha_opencarwings_dtc_VIN1")) == 1
