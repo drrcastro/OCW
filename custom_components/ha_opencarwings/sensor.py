@@ -69,20 +69,36 @@ def _ev_getter(key: str, fallback: str | None = None) -> Callable[[dict], Any]:
         return car.get(key)
     return _get
 
+
+def _health_getter(key: str) -> Callable[[dict], Any]:
+    """Get a value from the vehicle health report."""
+    def _get(car: dict):
+        health = car.get("veh_health") or {}
+        return health.get(key) if isinstance(health, dict) else None
+    return _get
+
 def _to_float(v: Any) -> float | None:
     if v is None:
         return None
     try:
         return float(v)
     except Exception:
-        try:
-            return float(s)
-        except Exception:
-            return None
+        return None
+
+
+def _tpms_bar(v: Any) -> float | None:
+    """Convert the API's TPMS centibar value to bar."""
+    value = _to_float(v)
+    return round(value / 100, 2) if value is not None else None
 
 def _round_1(v: Any) -> float | None:
     if v is None:
         return None
+
+
+def _to_kwh(v: Any) -> float | None:
+    value = _to_float(v)
+    return round(value / 1000, 2) if value is not None else None
     try:
         return round(float(v), 1)
     except Exception:
@@ -177,6 +193,27 @@ CAR_SENSORS: list[CarSensorSpec] = [
     CarSensorSpec("full_chg_time", "Full Charge Time", _ev_getter("full_chg_time")),
     CarSensorSpec("limit_chg_time", "Limit Charge Time", _ev_getter("limit_chg_time")),
     CarSensorSpec("obc_6kw", "OBC 6kW", _ev_getter("obc_6kw")),
+    CarSensorSpec("car_gear", "Gear", _ev_getter("car_gear"), transform=_to_int),
+    CarSensorSpec("soh", "Battery Health", _ev_getter("soh"), transform=_round_1, unit_of_measurement=PERCENTAGE),
+    CarSensorSpec("wh_content", "Remaining Energy", _ev_getter("wh_content"), transform=_to_kwh, unit_of_measurement="kWh"),
+    CarSensorSpec("cap_bars", "Capacity Bars", _ev_getter("cap_bars"), transform=_to_int),
+    CarSensorSpec("gids", "Available GIDs", _ev_getter("gids"), transform=_to_int),
+    CarSensorSpec("counter", "Battery Counter", _ev_getter("counter"), transform=_to_int),
+    CarSensorSpec("max_gids", "Maximum GIDs", _ev_getter("max_gids"), transform=_to_int),
+    CarSensorSpec("param21", "Battery Parameter 21", _ev_getter("param21"), transform=_to_int),
+    CarSensorSpec("cabin_temp", "Cabin Temperature", _ev_getter("cabin_temp"), transform=_to_float, unit_of_measurement="°C"),
+    CarSensorSpec("force_soc_display", "Forced SOC Display", _ev_getter("force_soc_display")),
+    CarSensorSpec("obc_6kw_avail", "OBC 6kW Available", _ev_getter("obc_6kw_avail")),
+    CarSensorSpec("batt_heater_avail", "Battery Heater Available", _ev_getter("batt_heater_avail")),
+    CarSensorSpec("batt_heater_status", "Battery Heater Active", _ev_getter("batt_heater_status")),
+    CarSensorSpec("signal_level", "Signal Level", lambda car: car.get("signal_level"), transform=_to_int),
+    CarSensorSpec("tpms_fl", "Tyre Pressure Front Left", _health_getter("tpms_fl"), transform=_tpms_bar, unit_of_measurement="bar"),
+    CarSensorSpec("tpms_fr", "Tyre Pressure Front Right", _health_getter("tpms_fr"), transform=_tpms_bar, unit_of_measurement="bar"),
+    CarSensorSpec("tpms_rl", "Tyre Pressure Rear Left", _health_getter("tpms_rl"), transform=_tpms_bar, unit_of_measurement="bar"),
+    CarSensorSpec("tpms_rr", "Tyre Pressure Rear Right", _health_getter("tpms_rr"), transform=_tpms_bar, unit_of_measurement="bar"),
+    CarSensorSpec("tpms_light", "TPMS Warning", _health_getter("tpms_light")),
+    CarSensorSpec("maintenance_alert", "Maintenance Alert", _health_getter("maintenance_alert")),
+    CarSensorSpec("health_mileage", "Health Report Mileage", _health_getter("mileage"), transform=_to_float, unit_of_measurement="km"),
 ]
 
 
@@ -248,6 +285,39 @@ class CarStatusSensor(OpenCarwingsCarEntity, SensorEntity):
             "signal_level": car.get("signal_level"),
             "soc": ev.get("soc"),
             "range_acoff": ev.get("range_acoff"),
+        }
+
+
+class CarDTCStatusSensor(OpenCarwingsCarEntity, SensorEntity):
+    """Diagnostic sensor exposing the number and details of reported DTCs."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator, entry_id: str, vin: str, seed_car: dict | None = None) -> None:
+        super().__init__(coordinator, entry_id, vin, seed_car)
+        self._attr_unique_id = f"ha_opencarwings_dtc_{vin}"
+
+    @property
+    def name(self) -> str:
+        car = self._get_car()
+        prefix = car.get("nickname") or car.get("model_name") or "Car"
+        return f"{prefix} Diagnostic Trouble Codes"
+
+    @property
+    def native_value(self) -> int:
+        health = self._get_car().get("veh_health") or {}
+        short = health.get("dtc_short") or []
+        long = health.get("dtc_long") or []
+        return len(short) + len(long) if isinstance(short, list) and isinstance(long, list) else 0
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        health = self._get_car().get("veh_health") or {}
+        return {
+            ATTR_ATTRIBUTION: "Data provided by OpenCARWINGS",
+            "short_codes": health.get("dtc_short") or [],
+            "long_codes": health.get("dtc_long") or [],
+            "timestamp": health.get("dtc_timestamp"),
         }
 
 
@@ -383,6 +453,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
         # Status
         entities.append(CarStatusSensor(coordinator, entry.entry_id, vin, seed_car=car))
+        entities.append(CarDTCStatusSensor(coordinator, entry.entry_id, vin, seed_car=car))
 
         # Diagnostics
         entities.append(CarLastUpdatedSensor(coordinator, entry.entry_id, vin, seed_car=car))
