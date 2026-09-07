@@ -27,7 +27,7 @@ DEFAULT_SCAN_INTERVAL_MIN = 15
 DEFAULT_API_BASE_URL = DEFAULT_API_BASE
 
 
-class OpenCARWINGSConfigFlow(config_entries.ConfigFlow, domain="ha_opencarwings"):
+class ConfigFlow(config_entries.ConfigFlow, domain="ha_opencarwings"):
     """Config flow for OpenCARWINGS."""
 
     VERSION = 1

@@ -1,5 +1,5 @@
 {
-  "domain": "opencarwings",
+  "domain": "ha_opencarwings",
   "name": "OpenCarWings",
   "version": "0.1.0",
   "config_flow": true,
