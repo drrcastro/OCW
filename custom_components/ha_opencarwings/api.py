@@ -53,6 +53,13 @@ class OpenCarWingsAPI:
         self._access = access
         self._refresh = refresh
 
+    def set_api_key(self, api_key: str) -> None:
+        """Set API key for authentication (Personal API Key method)."""
+        if not api_key or not api_key.strip():
+            raise AuthenticationError("API key cannot be empty")
+        self._access = api_key.strip()
+        self._refresh = None
+
     async def async_obtain_token(self, username: str, password: str) -> dict:
         url = f"{self._base}/api/token/obtain/"
         payload = {"username": username, "password": password}
@@ -90,6 +97,33 @@ class OpenCarWingsAPI:
             raise AuthenticationError("No access token received on refresh")
         self._access = access
         return access
+
+    async def async_validate_api_key(self, api_key: str) -> bool:
+        """Validate API key by making a simple request.
+        
+        Args:
+            api_key: API key to validate
+            
+        Returns:
+            True if API key is valid
+            
+        Raises:
+            AuthenticationError if API key is invalid
+        """
+        self.set_api_key(api_key)
+        try:
+            resp = await self.async_request("GET", "/api/car/")
+            if resp.status == 401:
+                raise AuthenticationError("Invalid API key")
+            if resp.status != 200:
+                text = await resp.text()
+                _LOGGER.debug("API key validation failed: %s %s", resp.status, text)
+                raise RequestError(f"API key validation failed: {resp.status}")
+            return True
+        except AuthenticationError:
+            raise
+        except Exception as err:
+            raise RequestError(f"Failed to validate API key: {err}")
 
     async def async_get_cars(self) -> list:
         """Retrieve a list of cars for the authenticated account.
@@ -152,5 +186,43 @@ class OpenCarWingsAPI:
             text = await resp.text()
             _LOGGER.debug("Failed to fetch car detail by VIN %s: %s %s", vin, resp.status, text)
             raise RequestError(f"Failed fetching car detail by VIN: {resp.status}")
+
+        return await resp.json()
+
+    async def async_send_command(
+        self, vin: str, command_type: int, command_pin: str = None
+    ) -> dict:
+        """Send a command to a vehicle.
+        
+        Args:
+            vin: Vehicle VIN
+            command_type: Command type ID (1-15)
+            command_pin: PIN code for commands that require it (7, 8, 9, 10, 11, 12, 13, 14)
+        
+        Returns:
+            Response dictionary from the API
+        """
+        vin = (vin or "").strip()
+        if not vin:
+            raise RequestError("VIN missing")
+
+        path = f"/api/command/{vin}/"
+        payload = {"vin": vin, "command_type": command_type}
+        
+        if command_pin:
+            payload["command_pin"] = command_pin
+
+        resp = await self.async_request("POST", path, json=payload)
+        
+        if resp.status == 401:
+            raise AuthenticationError("Not authorized to send command")
+        if resp.status == 403:
+            raise RequestError("Command PIN not set up or invalid")
+        if resp.status == 404:
+            raise RequestError("Car not found")
+        if resp.status != 200:
+            text = await resp.text()
+            _LOGGER.debug("Failed to send command to %s: %s %s", vin, resp.status, text)
+            raise RequestError(f"Failed to send command: {resp.status}")
 
         return await resp.json()
