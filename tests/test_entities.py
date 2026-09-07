@@ -16,9 +16,8 @@ async def test_battery_and_location_and_switch_creation(monkeypatch):
     # set up sensors
     await sensor_mod.async_setup_entry(hass, entry, add)
 
-    # Expect CarListSensor plus EV sensors (CarSensor removed as redundant)
-    # 1 list + (range_on, range_off, soc, soc_display, charge_bars, cable, charging, charge_finish, quick_charging, ac_status, eco_mode, car_running, odometer, full_chg_time, limit_chg_time, obc_6kw, status, last_updated, last_requested, vin) = 1 + 20 = 21
-    assert len(added) == 21
+    # One list sensor plus 37 value sensors, status, DTC summary and 3 diagnostics.
+    assert len(added) == 43
 
     # new EV sensors
     def _val(e):
