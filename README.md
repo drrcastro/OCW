@@ -5,19 +5,15 @@
 [![License](https://img.shields.io/github/license/drrcastro/OCW?style=for-the-badge)](LICENSE)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 
-A lightweight Home Assistant integration that connects to the OpenCARWINGS API to expose your Nissan Leaf (or compatible EV) as devices in Home Assistant.
+A lightweight Home Assistant integration that connects OpenCARWINGS to Home Assistant.
 
 ## ✨ Features
 
 - **🚗 Full car control:** Charge, A/C, doors, horn, lights, remote start/stop.
-- **🔑 Simple Authentication:** Uses Personal API Key authentication (no password storage required).
-- **📊 Real-time sensor data:** Battery level, range, charging status, location, TPMS, and health diagnostics.
-- **🎛️ UI Configuration:** Easy setup via the Home Assistant integrations UI flow.
+- **🔑 Simple Authentication:** Uses Personal API Key authentication.
 - **⚡ Automated Polling:** Configurable data refresh intervals.
 
 ## 📦 What it supports
-
-Per car, the integration currently exposes the following entities:
 
 ### 📊 Sensors
 - **Battery & Range:** State of Charge (SoC), Range (A/C on / A/C off), Remaining energy (kWh), Capacity bars, GIDs, and maximum GIDs.
@@ -25,16 +21,14 @@ Per car, the integration currently exposes the following entities:
 - **Climate & Environment:** Cabin temperature, A/C status, Eco mode, and Battery heater status.
 - **Vehicle Data:** Odometer, Gear, Battery counter, and Battery parameters.
 - **Health & Diagnostics:** State of Health (SoH), Tyre pressure for all four wheels (TPMS), TPMS/maintenance warnings, Diagnostic Trouble Codes (DTC), and TCU signal level.
-- **Integration Diagnostics:** Per-car "Last Updated" and "Last Requested" timestamps, plus a top-level `OpenCARWINGS Cars` sensor.
 
 ### 📍 Device Tracker
 - **GPS Location:** Tracks the car's physical location (uses `last_location` / `location` returned by the API). 
 
 ### 🎛️ Controls (Buttons & Switches)
-Full car control via the OpenCARWINGS command endpoint:
 - 🔄 **Refresh:** Request immediate data sync from the car.
 - 🔋 **Charging:** Start Charge, Start Charge 80%.
-- ❄️ **Climate (A/C):** Turn A/C On/Off (available as both a `Switch` and `Button` entities).
+- ❄️ **Climate (A/C):** Turn A/C On/Off
 - 🚪 **Doors:** Unlock/Lock doors *(Requires PIN)*.
 - 🔊 **Horn & Lights:** Horn, Lights, Horn & Lights, Stop Horn & Lights *(Requires PIN)*.
 - 🚗 **Engine:** Remote Start, Remote Stop *(Requires PIN)*.
@@ -70,18 +64,6 @@ Setup is done entirely via the UI. You will need:
   - Copy the full token (format: `Token xxxxxxxxxxxxxx`).
 - **Scan interval:** Polling frequency (default is 15 minutes).
 - **API base URL:** Defaults to `https://opencarwings.viaaq.eu`.
-
-## ⚠️ History & Recorder Exclusion
-
-The per-car **Last Updated** and **Last Requested** sensors are diagnostic timestamps that change frequently. To prevent them from filling up your database, it is highly recommended to exclude them from the Recorder in your `configuration.yaml`:
-
-```yaml
-recorder:
-  exclude:
-    entity_globs:
-      - "sensor.ocw_integration_last_updated_*"
-      - "sensor.ocw_integration_last_requested_*"
-```
 
 ## 🙏 Credits & Acknowledgements
 
