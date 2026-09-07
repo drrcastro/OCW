@@ -139,6 +139,17 @@ def hass_client(hass, entry_id: str):
     return hass.data[DOMAIN][entry_id]["client"]
 
 
+def hass_command_pin(hass, entry_id: str) -> str | None:
+    """Return the configured command PIN, preferring current options."""
+    entry = hass.config_entries.async_get_entry(entry_id)
+    if entry is None:
+        return None
+    options = getattr(entry, "options", {}) or {}
+    data = getattr(entry, "data", {}) or {}
+    pin = options.get("command_pin", data.get("command_pin", ""))
+    return pin.strip() or None if isinstance(pin, str) else None
+
+
 class CarChargeStartButton(ButtonEntity):
     """Button that sends a 'Charge start' command for a specific car."""
 
@@ -357,8 +368,7 @@ class CarHornButton(ButtonEntity):
     async def async_press(self) -> None:
         client = hass_client(self.hass, self._entry_id)
         try:
-            # Note: requires command_pin in account settings or via helper_pin input
-            pin = None  # User must set PIN in account settings on OpenCARWINGS portal
+            pin = hass_command_pin(self.hass, self._entry_id)
             await client.async_send_command(self._vin, self._command_type, pin)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
@@ -405,7 +415,7 @@ class CarLightsButton(ButtonEntity):
     async def async_press(self) -> None:
         client = hass_client(self.hass, self._entry_id)
         try:
-            pin = None  # User must set PIN in account settings on OpenCARWINGS portal
+            pin = hass_command_pin(self.hass, self._entry_id)
             await client.async_send_command(self._vin, self._command_type, pin)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
@@ -452,7 +462,7 @@ class CarHornLightsButton(ButtonEntity):
     async def async_press(self) -> None:
         client = hass_client(self.hass, self._entry_id)
         try:
-            pin = None  # User must set PIN in account settings on OpenCARWINGS portal
+            pin = hass_command_pin(self.hass, self._entry_id)
             await client.async_send_command(self._vin, self._command_type, pin)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
@@ -499,7 +509,7 @@ class CarStopHornLightsButton(ButtonEntity):
     async def async_press(self) -> None:
         client = hass_client(self.hass, self._entry_id)
         try:
-            pin = None  # User must set PIN in account settings on OpenCARWINGS portal
+            pin = hass_command_pin(self.hass, self._entry_id)
             await client.async_send_command(self._vin, self._command_type, pin)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
@@ -546,7 +556,7 @@ class CarDoorUnlockButton(ButtonEntity):
     async def async_press(self) -> None:
         client = hass_client(self.hass, self._entry_id)
         try:
-            pin = None  # User must set PIN in account settings on OpenCARWINGS portal
+            pin = hass_command_pin(self.hass, self._entry_id)
             await client.async_send_command(self._vin, self._command_type, pin)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
@@ -593,7 +603,7 @@ class CarDoorLockButton(ButtonEntity):
     async def async_press(self) -> None:
         client = hass_client(self.hass, self._entry_id)
         try:
-            pin = None  # User must set PIN in account settings on OpenCARWINGS portal
+            pin = hass_command_pin(self.hass, self._entry_id)
             await client.async_send_command(self._vin, self._command_type, pin)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
@@ -640,7 +650,7 @@ class CarRemoteStartButton(ButtonEntity):
     async def async_press(self) -> None:
         client = hass_client(self.hass, self._entry_id)
         try:
-            pin = None  # User must set PIN in account settings on OpenCARWINGS portal
+            pin = hass_command_pin(self.hass, self._entry_id)
             await client.async_send_command(self._vin, self._command_type, pin)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
@@ -687,7 +697,7 @@ class CarRemoteStopButton(ButtonEntity):
     async def async_press(self) -> None:
         client = hass_client(self.hass, self._entry_id)
         try:
-            pin = None  # User must set PIN in account settings on OpenCARWINGS portal
+            pin = hass_command_pin(self.hass, self._entry_id)
             await client.async_send_command(self._vin, self._command_type, pin)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)

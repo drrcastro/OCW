@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import Any
+import asyncio
 import logging
 
 from homeassistant.components.switch import SwitchEntity
@@ -10,6 +11,9 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from . import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
+
+AC_CONFIRMATION_INTERVAL = 5
+AC_CONFIRMATION_ATTEMPTS = 6
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -103,18 +107,26 @@ class CarACSwitch(CoordinatorEntity, SwitchEntity):
         return self._car
 
     async def _refresh_and_verify(self, expected: bool) -> None:
-        """Refresh state after a command and report if the car did not confirm it."""
+        """Poll until the car reports the requested A/C state or times out."""
         if not self._coordinator:
             return
-        await self._coordinator.async_request_refresh()
-        actual = self.is_on
-        if actual is not None and actual != expected:
-            _LOGGER.warning(
-                "OpenCARWINGS did not confirm A/C=%s for %s (reported=%s)",
-                expected,
-                self._vin,
-                actual,
-            )
+
+        for attempt in range(AC_CONFIRMATION_ATTEMPTS):
+            await self._coordinator.async_request_refresh()
+            actual = self.is_on
+            if actual == expected:
+                return
+
+            if attempt < AC_CONFIRMATION_ATTEMPTS - 1:
+                await asyncio.sleep(AC_CONFIRMATION_INTERVAL)
+
+        _LOGGER.warning(
+            "OpenCARWINGS did not confirm A/C=%s for %s after %s attempts (reported=%s)",
+            expected,
+            self._vin,
+            AC_CONFIRMATION_ATTEMPTS,
+            self.is_on,
+        )
 
 
 def hass_client(hass, entry_id: str):

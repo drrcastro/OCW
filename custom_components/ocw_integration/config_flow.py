@@ -54,6 +54,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain="ocw_integration"):
                         title="OpenCarWings",
                         data={
                             "api_key": api_key,
+                            "command_pin": user_input.get("command_pin", "").strip(),
                             # persist initial scan interval choice
                             "scan_interval": user_input.get("scan_interval", DEFAULT_SCAN_INTERVAL_MIN),
                             "api_base_url": api_base,
@@ -77,6 +78,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain="ocw_integration"):
         data_schema = vol.Schema(
             {
                 vol.Required("api_key"): str,
+                vol.Optional("command_pin", default=""): str,
                 vol.Required("scan_interval", default=DEFAULT_SCAN_INTERVAL_MIN): scan_selector,
                 vol.Required("api_base_url", default=DEFAULT_API_BASE_URL): str,
             }
@@ -95,6 +97,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         current_scan = self.config_entry.options.get("scan_interval", self.config_entry.data.get("scan_interval", DEFAULT_SCAN_INTERVAL_MIN))
         current_api = self.config_entry.options.get("api_base_url", self.config_entry.data.get("api_base_url", DEFAULT_API_BASE_URL))
+        current_pin = self.config_entry.options.get("command_pin", self.config_entry.data.get("command_pin", ""))
         try:
             from homeassistant.helpers import selector
 
@@ -109,6 +112,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema({
+                vol.Optional("command_pin", default=current_pin): str,
                 vol.Required("scan_interval", default=current_scan): scan_selector,
                 vol.Required("api_base_url", default=current_api): str,
             }),
