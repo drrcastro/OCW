@@ -27,10 +27,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
             entities.append(CarChargeStartButton(entry.entry_id, car))
             entities.append(CarChargeStart80Button(entry.entry_id, car))
             
-            # Climate control
-            entities.append(CarACOnButton(entry.entry_id, car))
-            entities.append(CarACOffButton(entry.entry_id, car))
-            
             # Horn and lights
             entities.append(CarHornButton(entry.entry_id, car))
             entities.append(CarLightsButton(entry.entry_id, car))
