@@ -148,7 +148,11 @@ class OpenCarWingsAPI:
         headers = kwargs.pop("headers", {}) or {}
 
         if self._access:
-            headers["Authorization"] = f"Bearer {self._access}"
+                # If it looks like an API Key (long hex), use Token format; else Bearer (JWT)
+                if len(self._access) > 100 or not self._access.startswith("eyJ"):
+                    headers["Authorization"] = f"Token {self._access}"
+                else:
+                    headers["Authorization"] = f"Bearer {self._access}"
 
         try:
             resp = await self._session.request(method, url, headers=headers, **kwargs)
