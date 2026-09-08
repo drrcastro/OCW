@@ -4,14 +4,22 @@ create_timer:
   fields:
     entry_id:
       name: Integration entry ID
-      description: The ID of this OpenCarWings integration entry. Find it in Settings > Devices & services > OpenCarWings > the three-dot menu > System options.
-      required: true
+      description: Select the OpenCarWings integration entry that contains the car.
+      required: false
       selector:
-        text:
+        config_entry:
+          integration: ocw_integration
+    device_id:
+      name: Car
+      description: Select the car that should perform the action. The VIN is found automatically.
+      required: false
+      selector:
+        device:
+          integration: ocw_integration
     vin:
       name: Car VIN
-      description: The vehicle identification number of the car that should perform the action. It is available in the car's VIN sensor.
-      required: true
+      description: The VIN of the car. Use this when calling the service from YAML; in the visual editor, select the car above instead.
+      required: false
       selector:
         text:
     name:
@@ -29,47 +37,47 @@ create_timer:
     command_type:
       name: Action
       description: What the car should do at the selected time.
-      default: 3
+      default: "3"
       selector:
         select:
           options:
             - label: Turn A/C on
-              value: 3
+              value: "3"
             - label: Turn A/C off
-              value: 4
+              value: "4"
             - label: Start charging
-              value: 2
+              value: "2"
             - label: Start charging to 80%
-              value: 6
+              value: "6"
             - label: Refresh car data
-              value: 1
+              value: "1"
             - label: Unlock doors
-              value: 7
+              value: "7"
             - label: Lock doors
-              value: 8
+              value: "8"
             - label: Horn
-              value: 9
+              value: "9"
             - label: Lights
-              value: 10
+              value: "10"
             - label: Horn and lights
-              value: 11
+              value: "11"
             - label: Stop horn and lights
-              value: 12
+              value: "12"
             - label: Remote start
-              value: 13
+              value: "13"
             - label: Remote stop
-              value: 14
+              value: "14"
     timer_type:
       name: Schedule type
       description: Choose One time for a single date, or Weekly to repeat on selected weekdays.
-      default: 0
+      default: "0"
       selector:
         select:
           options:
             - label: One time
-              value: 0
+              value: "0"
             - label: Weekly
-              value: 1
+              value: "1"
     enabled:
       name: Enable timer now
       description: Turn this off if you want to create the timer without activating it yet.
@@ -126,15 +134,23 @@ update_timer:
     entry_id:
       name: Integration entry ID
       description: The ID of this OpenCarWings integration entry.
-      required: true
+      required: false
       selector:
-        text:
+        config_entry:
+          integration: ocw_integration
     vin:
       name: Car VIN
-      description: The VIN of the car that owns the timer.
-      required: true
+      description: The VIN of the car that owns the timer. Use this when calling the service from YAML; in the visual editor, select the car above instead.
+      required: false
       selector:
         text:
+    device_id:
+      name: Car
+      description: Select the car that owns the timer. The VIN is found automatically.
+      required: false
+      selector:
+        device:
+          integration: ocw_integration
     timer_id:
       name: Timer ID
       description: The numeric ID of the timer. Find it in the timer data returned by the API or in Home Assistant's service trace.
@@ -170,31 +186,31 @@ update_timer:
         select:
           options:
             - label: Turn A/C on
-              value: 3
+              value: "3"
             - label: Turn A/C off
-              value: 4
+              value: "4"
             - label: Start charging
-              value: 2
+              value: "2"
             - label: Start charging to 80%
-              value: 6
+              value: "6"
             - label: Refresh car data
-              value: 1
+              value: "1"
             - label: Unlock doors
-              value: 7
+              value: "7"
             - label: Lock doors
-              value: 8
+              value: "8"
             - label: Horn
-              value: 9
+              value: "9"
             - label: Lights
-              value: 10
+              value: "10"
             - label: Horn and lights
-              value: 11
+              value: "11"
             - label: Stop horn and lights
-              value: 12
+              value: "12"
             - label: Remote start
-              value: 13
+              value: "13"
             - label: Remote stop
-              value: 14
+              value: "14"
     timer_type:
       name: Schedule type
       description: Choose One time for a single date, or Weekly to repeat on selected weekdays.
@@ -202,9 +218,9 @@ update_timer:
         select:
           options:
             - label: One time
-              value: 0
+              value: "0"
             - label: Weekly
-              value: 1
+              value: "1"
     weekday_mon:
       name: Monday
       selector:
@@ -241,15 +257,23 @@ delete_timer:
     entry_id:
       name: Integration entry ID
       description: The ID of this OpenCarWings integration entry.
-      required: true
+      required: false
       selector:
-        text:
+        config_entry:
+          integration: ocw_integration
     vin:
       name: Car VIN
-      description: The VIN of the car that owns the timer.
-      required: true
+      description: The VIN of the car that owns the timer. Use this when calling the service from YAML; in the visual editor, select the car above instead.
+      required: false
       selector:
         text:
+    device_id:
+      name: Car
+      description: Select the car that owns the timer. The VIN is found automatically.
+      required: false
+      selector:
+        device:
+          integration: ocw_integration
     timer_id:
       name: Timer ID
       description: The numeric ID of the timer you want to remove.
