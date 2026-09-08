@@ -7,6 +7,8 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import device_registry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import OpenCarWingsAPI, AuthenticationError, RequestError
@@ -18,6 +20,41 @@ PLATFORMS = ["sensor", "switch", "device_tracker", "button"]
 DEFAULT_SCAN_INTERVAL_MIN = 15
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _resolve_timer_target(hass: HomeAssistant, call) -> tuple[str, str]:
+    """Resolve an entry and VIN from a selected device or explicit fields."""
+    entry_id = call.data.get("entry_id")
+    vin = call.data.get("vin")
+    device_id = call.data.get("device_id")
+
+    if device_id:
+        registry = device_registry.async_get(hass)
+        device = registry.async_get(device_id)
+        if device is None:
+            raise ServiceValidationError("The selected car device was not found")
+        for domain, identifier in device.identifiers:
+            if domain == DOMAIN:
+                vin = vin or identifier
+                break
+        if not vin:
+            raise ServiceValidationError("The selected device is not an OpenCarWings car")
+        if not entry_id and device.config_entries:
+            entry_id = next(iter(device.config_entries))
+        if entry_id and device.config_entries and entry_id not in device.config_entries:
+            raise ServiceValidationError("The selected car does not belong to the selected integration entry")
+
+    if not entry_id:
+        entries = [key for key, value in hass.data.get(DOMAIN, {}).items() if isinstance(value, dict)]
+        if len(entries) == 1:
+            entry_id = entries[0]
+    if not entry_id:
+        raise ServiceValidationError("Select an OpenCarWings integration entry")
+    if not vin:
+        raise ServiceValidationError("Select a car or provide a VIN")
+    if entry_id not in hass.data.get(DOMAIN, {}):
+        raise ServiceValidationError("The selected OpenCarWings integration entry is not loaded")
+    return entry_id, vin
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -204,29 +241,34 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             }
 
             async def _handle_create_timer(call):
-                data = hass.data[DOMAIN][call.data["entry_id"]]
-                timer = {key: value for key, value in call.data.items() if key not in {"entry_id", "vin"}}
-                await data["client"].async_create_timer(call.data["vin"], timer)
+                entry_id, vin = _resolve_timer_target(hass, call)
+                data = hass.data[DOMAIN][entry_id]
+                timer = {key: value for key, value in call.data.items() if key not in {"entry_id", "vin", "device_id"}}
+                await data["client"].async_create_timer(vin, timer)
                 await data["coordinator"].async_request_refresh()
 
             async def _handle_update_timer(call):
-                data = hass.data[DOMAIN][call.data["entry_id"]]
+                entry_id, vin = _resolve_timer_target(hass, call)
+                data = hass.data[DOMAIN][entry_id]
                 timer_id = call.data["timer_id"]
-                timer = {key: value for key, value in call.data.items() if key not in {"entry_id", "vin", "timer_id"}}
-                await data["client"].async_update_timer(call.data["vin"], timer_id, timer)
+                timer = {key: value for key, value in call.data.items() if key not in {"entry_id", "vin", "device_id", "timer_id"}}
+                await data["client"].async_update_timer(vin, timer_id, timer)
                 await data["coordinator"].async_request_refresh()
 
             async def _handle_delete_timer(call):
-                data = hass.data[DOMAIN][call.data["entry_id"]]
-                await data["client"].async_delete_timer(call.data["vin"], call.data["timer_id"])
+                entry_id, vin = _resolve_timer_target(hass, call)
+                data = hass.data[DOMAIN][entry_id]
+                await data["client"].async_delete_timer(vin, call.data["timer_id"])
                 await data["coordinator"].async_request_refresh()
 
             hass.services.async_register(DOMAIN, "create_timer", _handle_create_timer, vol.Schema({
-                **timer_fields,
+                vol.Optional("entry_id"): str,
+                vol.Optional("vin"): str,
+                vol.Optional("device_id"): str,
                 vol.Required("name"): str,
                 vol.Required("time"): str,
-                vol.Optional("timer_type", default=0): int,
-                vol.Optional("command_type", default=3): int,
+                vol.Optional("timer_type", default=0): vol.Coerce(int),
+                vol.Optional("command_type", default=3): vol.Coerce(int),
                 vol.Optional("enabled", default=True): bool,
                 vol.Optional("date"): str,
                 vol.Optional("weekday_mon", default=False): bool,
@@ -238,14 +280,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 vol.Optional("weekday_sun", default=False): bool,
             }))
             hass.services.async_register(DOMAIN, "update_timer", _handle_update_timer, vol.Schema({
-                **timer_fields,
-                vol.Required("timer_id"): int,
+                vol.Optional("entry_id"): str,
+                vol.Optional("vin"): str,
+                vol.Optional("device_id"): str,
+                vol.Required("timer_id"): vol.Coerce(int),
                 vol.Optional("enabled"): bool,
                 vol.Optional("name"): str,
                 vol.Optional("time"): str,
                 vol.Optional("date"): str,
-                vol.Optional("command_type"): int,
-                vol.Optional("timer_type"): int,
+                vol.Optional("command_type"): vol.Coerce(int),
+                vol.Optional("timer_type"): vol.Coerce(int),
                 vol.Optional("weekday_mon"): bool,
                 vol.Optional("weekday_tue"): bool,
                 vol.Optional("weekday_wed"): bool,
@@ -255,8 +299,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 vol.Optional("weekday_sun"): bool,
             }))
             hass.services.async_register(DOMAIN, "delete_timer", _handle_delete_timer, vol.Schema({
-                **timer_fields,
-                vol.Required("timer_id"): int,
+                vol.Optional("entry_id"): str,
+                vol.Optional("vin"): str,
+                vol.Optional("device_id"): str,
+                vol.Required("timer_id"): vol.Coerce(int),
             }))
             hass.data[DOMAIN]["_service_refresh_registered"] = True
         except Exception:
