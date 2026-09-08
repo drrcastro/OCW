@@ -87,13 +87,13 @@ class CarRefreshButton(ButtonEntity):
         self._entry_id = entry_id
         self._car = car
         self._vin = car.get("vin")
-        self._attr_icon = "mdi:car-refresh"
+        self._attr_icon = "mdi:refresh"
 
     @property
     def name(self) -> str:
         # Friendly label: prefer car nickname, then model name, then VIN
         label = self._car.get("nickname") or self._car.get("model_name") or self._vin
-        return f"Request data refresh for {label}"
+        return f"Request data refresh"
 
     @property
     def unique_id(self) -> str:
@@ -166,7 +166,7 @@ class CarChargeStartButton(ButtonEntity):
     def name(self) -> str:
         # Friendly label: prefer car nickname, then model name, then VIN
         label = self._car.get("nickname") or self._car.get("model_name") or self._vin
-        return f"Charge start for {label}"
+        return f"Charge start"
 
     @property
     def unique_id(self) -> str:
@@ -216,7 +216,7 @@ class CarChargeStart80Button(ButtonEntity):
     @property
     def name(self) -> str:
         label = self._car.get("nickname") or self._car.get("model_name") or self._vin
-        return f"Charge start 80% for {label}"
+        return f"Start charge untill 80%"
 
     @property
     def unique_id(self) -> str:
@@ -357,7 +357,7 @@ class CarHornButton(ButtonEntity):
     @property
     def name(self) -> str:
         label = self._car.get("nickname") or self._car.get("model_name") or self._vin
-        return f"Horn for {label}"
+        return f"Horn ON"
 
     @property
     def unique_id(self) -> str:
@@ -405,7 +405,7 @@ class CarLightsButton(ButtonEntity):
     @property
     def name(self) -> str:
         label = self._car.get("nickname") or self._car.get("model_name") or self._vin
-        return f"Lights for {label}"
+        return f"Lights ON"
 
     @property
     def unique_id(self) -> str:
@@ -453,7 +453,7 @@ class CarHornLightsButton(ButtonEntity):
     @property
     def name(self) -> str:
         label = self._car.get("nickname") or self._car.get("model_name") or self._vin
-        return f"Horn & Lights for {label}"
+        return f"Horn & Lights ON"
 
     @property
     def unique_id(self) -> str:
@@ -501,7 +501,7 @@ class CarStopHornLightsButton(ButtonEntity):
     @property
     def name(self) -> str:
         label = self._car.get("nickname") or self._car.get("model_name") or self._vin
-        return f"Stop Horn & Lights for {label}"
+        return f"Horn & Lights OFF"
 
     @property
     def unique_id(self) -> str:
@@ -549,7 +549,7 @@ class CarDoorUnlockButton(ButtonEntity):
     @property
     def name(self) -> str:
         label = self._car.get("nickname") or self._car.get("model_name") or self._vin
-        return f"Unlock doors for {label}"
+        return f"Door UNLOCK"
 
     @property
     def unique_id(self) -> str:
@@ -597,7 +597,7 @@ class CarDoorLockButton(ButtonEntity):
     @property
     def name(self) -> str:
         label = self._car.get("nickname") or self._car.get("model_name") or self._vin
-        return f"Lock doors for {label}"
+        return f"Door LOCK"
 
     @property
     def unique_id(self) -> str:
@@ -645,7 +645,7 @@ class CarRemoteStartButton(ButtonEntity):
     @property
     def name(self) -> str:
         label = self._car.get("nickname") or self._car.get("model_name") or self._vin
-        return f"Remote start for {label}"
+        return f"Remote START"
 
     @property
     def unique_id(self) -> str:
@@ -693,7 +693,7 @@ class CarRemoteStopButton(ButtonEntity):
     @property
     def name(self) -> str:
         label = self._car.get("nickname") or self._car.get("model_name") or self._vin
-        return f"Remote stop for {label}"
+        return f"Remote STOP"
 
     @property
     def unique_id(self) -> str:

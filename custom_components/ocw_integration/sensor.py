@@ -293,9 +293,7 @@ class CarValueSensor(OpenCarwingsCarEntity, SensorEntity):
 
     @property
     def name(self) -> str:
-        car = self._get_car()
-        prefix = car.get("nickname") or car.get("model_name") or "Car"
-        return f"{prefix} {self._spec.name}"
+        return self._spec.name
 
     @property
     def native_value(self):
@@ -321,9 +319,7 @@ class CarStatusSensor(OpenCarwingsCarEntity, SensorEntity):
 
     @property
     def name(self) -> str:
-        car = self._get_car()
-        prefix = car.get("nickname") or car.get("model_name") or "Car"
-        return f"{prefix} Status"
+        return "Status"
 
     @property
     def native_value(self) -> str:
@@ -363,9 +359,7 @@ class CarDTCStatusSensor(OpenCarwingsCarEntity, SensorEntity):
 
     @property
     def name(self) -> str:
-        car = self._get_car()
-        prefix = car.get("nickname") or car.get("model_name") or "Car"
-        return f"{prefix} Diagnostic Trouble Codes"
+        return "DTCs"
 
     @property
     def native_value(self) -> int:
@@ -401,9 +395,7 @@ class CarVINSensor(OpenCarwingsCarEntity, SensorEntity):
 
     @property
     def name(self) -> str:
-        car = self._get_car()
-        prefix = car.get("nickname") or car.get("model_name") or "Car"
-        return f"{prefix} VIN"
+        return "VIN"
 
     @property
     def native_value(self) -> str:
@@ -422,9 +414,7 @@ class CarLastUpdatedSensor(OpenCarwingsCarEntity, SensorEntity):
 
     @property
     def name(self) -> str:
-        car = self._get_car()
-        prefix = car.get("nickname") or car.get("model_name") or "Car"
-        return f"{prefix} Last Updated"
+        return "Last Updated"
 
     @property
     def native_value(self) -> str:
@@ -450,9 +440,7 @@ class CarLastRequestedSensor(OpenCarwingsCarEntity, SensorEntity):
 
     @property
     def name(self) -> str:
-        car = self._get_car()
-        prefix = car.get("nickname") or car.get("model_name") or "Car"
-        return f"{prefix} Last Requested"
+        return "Last Requested"
 
     @property
     def native_value(self) -> str:
