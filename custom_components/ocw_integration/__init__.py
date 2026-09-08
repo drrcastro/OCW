@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import timedelta
 import asyncio
+import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -19,8 +20,13 @@ DEFAULT_SCAN_INTERVAL_MIN = 15
 _LOGGER = logging.getLogger(__name__)
 
 
+async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    await hass.config_entries.async_reload(entry.entry_id)
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up the OpenCARWINGS integration from a config entry with a DataUpdateCoordinator."""
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     hass.data.setdefault(DOMAIN, {})
 
     # Respect configured API base URL (options override initial data)
@@ -192,6 +198,66 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         try:
             hass.services.async_register(DOMAIN, "refresh", _handle_refresh)
+            timer_fields = {
+                vol.Required("entry_id"): str,
+                vol.Required("vin"): str,
+            }
+
+            async def _handle_create_timer(call):
+                data = hass.data[DOMAIN][call.data["entry_id"]]
+                timer = {key: value for key, value in call.data.items() if key not in {"entry_id", "vin"}}
+                await data["client"].async_create_timer(call.data["vin"], timer)
+                await data["coordinator"].async_request_refresh()
+
+            async def _handle_update_timer(call):
+                data = hass.data[DOMAIN][call.data["entry_id"]]
+                timer_id = call.data["timer_id"]
+                timer = {key: value for key, value in call.data.items() if key not in {"entry_id", "vin", "timer_id"}}
+                await data["client"].async_update_timer(call.data["vin"], timer_id, timer)
+                await data["coordinator"].async_request_refresh()
+
+            async def _handle_delete_timer(call):
+                data = hass.data[DOMAIN][call.data["entry_id"]]
+                await data["client"].async_delete_timer(call.data["vin"], call.data["timer_id"])
+                await data["coordinator"].async_request_refresh()
+
+            hass.services.async_register(DOMAIN, "create_timer", _handle_create_timer, vol.Schema({
+                **timer_fields,
+                vol.Required("name"): str,
+                vol.Required("time"): str,
+                vol.Optional("timer_type", default=0): int,
+                vol.Optional("command_type", default=3): int,
+                vol.Optional("enabled", default=True): bool,
+                vol.Optional("date"): str,
+                vol.Optional("weekday_mon", default=False): bool,
+                vol.Optional("weekday_tue", default=False): bool,
+                vol.Optional("weekday_wed", default=False): bool,
+                vol.Optional("weekday_thu", default=False): bool,
+                vol.Optional("weekday_fri", default=False): bool,
+                vol.Optional("weekday_sat", default=False): bool,
+                vol.Optional("weekday_sun", default=False): bool,
+            }))
+            hass.services.async_register(DOMAIN, "update_timer", _handle_update_timer, vol.Schema({
+                **timer_fields,
+                vol.Required("timer_id"): int,
+                vol.Optional("enabled"): bool,
+                vol.Optional("name"): str,
+                vol.Optional("time"): str,
+                vol.Optional("date"): str,
+                vol.Optional("command_type"): int,
+                vol.Optional("timer_type"): int,
+                vol.Optional("weekday_mon"): bool,
+                vol.Optional("weekday_tue"): bool,
+                vol.Optional("weekday_wed"): bool,
+                vol.Optional("weekday_thu"): bool,
+                vol.Optional("weekday_fri"): bool,
+                vol.Optional("weekday_sat"): bool,
+                vol.Optional("weekday_sun"): bool,
+            }))
+            hass.services.async_register(DOMAIN, "delete_timer", _handle_delete_timer, vol.Schema({
+                **timer_fields,
+                vol.Required("timer_id"): int,
+            }))
             hass.data[DOMAIN]["_service_refresh_registered"] = True
         except Exception:
             # If hass.services isn't available in tests/stubs, ignore

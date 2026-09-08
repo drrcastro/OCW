@@ -64,6 +64,13 @@ Setup is done entirely via the UI. You will need:
   - Copy the full token (format: `Token xxxxxxxxxxxxxx`).
 - **Scan interval:** Polling frequency (default is 15 minutes).
 - **API base URL:** Defaults to `https://opencarwings.viaaq.eu`.
+- **Unit system:** Select Metric or Imperial. Distances, temperature and tyre pressure are converted accordingly.
+
+### Timers
+
+Vehicle timers are managed through the Home Assistant services `ocw_integration.create_timer`, `ocw_integration.update_timer` and `ocw_integration.delete_timer`.
+
+Use `enabled: false` with `update_timer` to disable a timer without deleting it. Timer data includes the time, date or weekdays, command type and enabled state.
 
 ## 🙏 Credits & Acknowledgements
 

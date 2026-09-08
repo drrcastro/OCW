@@ -193,6 +193,29 @@ class OpenCarWingsAPI:
 
         return await resp.json()
 
+    async def async_list_timers(self, vin: str) -> list[dict]:
+        resp = await self.async_request("GET", f"/api/car/{vin}/timers/")
+        if resp.status != 200:
+            raise RequestError(f"Failed fetching timers: {resp.status}")
+        return await resp.json()
+
+    async def async_create_timer(self, vin: str, timer: dict) -> dict:
+        resp = await self.async_request("POST", f"/api/car/{vin}/timers/", json=timer)
+        if resp.status not in (200, 201):
+            raise RequestError(f"Failed creating timer: {resp.status}")
+        return await resp.json()
+
+    async def async_update_timer(self, vin: str, timer_id: int, timer: dict) -> dict:
+        resp = await self.async_request("PATCH", f"/api/car/{vin}/timers/{timer_id}", json=timer)
+        if resp.status != 200:
+            raise RequestError(f"Failed updating timer: {resp.status}")
+        return await resp.json()
+
+    async def async_delete_timer(self, vin: str, timer_id: int) -> None:
+        resp = await self.async_request("DELETE", f"/api/car/{vin}/timers/{timer_id}")
+        if resp.status != 204:
+            raise RequestError(f"Failed deleting timer: {resp.status}")
+
     async def async_send_command(
         self, vin: str, command_type: int, command_pin: str = None
     ) -> dict:

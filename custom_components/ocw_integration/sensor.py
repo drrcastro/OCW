@@ -105,10 +105,18 @@ def _round_1(v: Any) -> float | None:
 def _to_kwh(v: Any) -> float | None:
     value = _to_float(v)
     return round(value / 1000, 2) if value is not None else None
-    try:
-        return round(float(v), 1)
-    except Exception:
-        return None
+
+
+def _convert_unit_value(key: str, value: Any, unit_system: str) -> Any:
+    if unit_system != "imperial" or value is None:
+        return value
+    if key in {"range_acon", "range_acoff", "odometer", "health_mileage"}:
+        return round(float(value) * 0.621371, 1)
+    if key == "cabin_temp":
+        return round(float(value) * 9 / 5 + 32, 1)
+    if key in {"tpms_fl", "tpms_fr", "tpms_rl", "tpms_rr"}:
+        return round(float(value) * 14.5038, 2)
+    return value
 
 # -----------------------------
 # Base per-car entity
@@ -213,6 +221,14 @@ SENSOR_ICONS = {
     "batt_heater_avail": "mdi:radiator",
     "batt_heater_status": "mdi:radiator",
     "signal_level": "mdi:signal-cellular-3",
+    "tcu_model": "mdi:chip",
+    "tcu_serial": "mdi:identifier",
+    "tcu_ver": "mdi:memory",
+    "tcu_type": "mdi:cellphone-cog",
+    "tcu_version": "mdi:package-check",
+    "navi_version": "mdi:map-marker-path",
+    "map_version": "mdi:map",
+    "carrier": "mdi:sim",
     "tpms_fl": "mdi:tire",
     "tpms_fr": "mdi:tire",
     "tpms_rl": "mdi:tire",
@@ -266,6 +282,14 @@ CAR_SENSORS: list[CarSensorSpec] = [
     CarSensorSpec("batt_heater_avail", "Battery Heater Available", _ev_getter("batt_heater_avail")),
     CarSensorSpec("batt_heater_status", "Battery Heater Active", _ev_getter("batt_heater_status")),
     CarSensorSpec("signal_level", "Signal Level", lambda car: car.get("signal_level"), transform=_to_int),
+    CarSensorSpec("tcu_model", "TCU Model", lambda car: car.get("tcu_model")),
+    CarSensorSpec("tcu_serial", "TCU Serial", lambda car: car.get("tcu_serial")),
+    CarSensorSpec("tcu_ver", "TCU Firmware", lambda car: car.get("tcu_ver")),
+    CarSensorSpec("tcu_type", "TCU Type", lambda car: car.get("tcu_type")),
+    CarSensorSpec("tcu_version", "TCU Version", lambda car: car.get("tcu_version")),
+    CarSensorSpec("navi_version", "Navigation Version", lambda car: car.get("navi_version")),
+    CarSensorSpec("map_version", "Map Version", lambda car: car.get("map_version")),
+    CarSensorSpec("carrier", "Mobile Carrier", lambda car: car.get("carrier")),
     CarSensorSpec("tpms_fl", "Tyre Pressure Front Left", _health_getter("tpms_fl"), transform=_tpms_bar, unit_of_measurement="bar"),
     CarSensorSpec("tpms_fr", "Tyre Pressure Front Right", _health_getter("tpms_fr"), transform=_tpms_bar, unit_of_measurement="bar"),
     CarSensorSpec("tpms_rl", "Tyre Pressure Rear Left", _health_getter("tpms_rl"), transform=_tpms_bar, unit_of_measurement="bar"),
@@ -279,9 +303,10 @@ CAR_SENSORS: list[CarSensorSpec] = [
 class CarValueSensor(OpenCarwingsCarEntity, SensorEntity):
     """Generic per-car sensor based on CarSensorSpec."""
 
-    def __init__(self, coordinator, entry_id: str, vin: str, spec: CarSensorSpec, seed_car: dict | None = None) -> None:
+    def __init__(self, coordinator, entry_id: str, vin: str, spec: CarSensorSpec, seed_car: dict | None = None, unit_system: str = "metric") -> None:
         OpenCarwingsCarEntity.__init__(self, coordinator, entry_id, vin, seed_car)
         self._spec = spec
+        self._unit_system = unit_system
         self._attr_unique_id = f"ocw_integration_{spec.key}_{vin}"
         if spec.device_class:
             self._attr_device_class = spec.device_class
@@ -289,6 +314,9 @@ class CarValueSensor(OpenCarwingsCarEntity, SensorEntity):
             self._attr_state_class = spec.state_class
         if spec.unit_of_measurement:
             self._attr_native_unit_of_measurement = spec.unit_of_measurement
+            if unit_system == "imperial":
+                imperial_units = {"km": "mi", "°C": "°F", "bar": "psi"}
+                self._attr_native_unit_of_measurement = imperial_units.get(spec.unit_of_measurement, spec.unit_of_measurement)
         self._attr_icon = spec.icon or SENSOR_ICONS.get(spec.key)
 
     @property
@@ -301,8 +329,8 @@ class CarValueSensor(OpenCarwingsCarEntity, SensorEntity):
         val = self._spec.value(car)
 
         if self._spec.transform:
-            return self._spec.transform(val)
-        return val
+            val = self._spec.transform(val)
+        return _convert_unit_value(self._spec.key, val, self._unit_system)
 
 
 # -----------------------------
@@ -504,8 +532,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
             continue
 
         # Generic value sensors
+        unit_system = entry.options.get("unit_system", entry.data.get("unit_system", "metric"))
         for spec in CAR_SENSORS:
-            entities.append(CarValueSensor(coordinator, entry.entry_id, vin, spec, seed_car=car))
+            entities.append(CarValueSensor(coordinator, entry.entry_id, vin, spec, seed_car=car, unit_system=unit_system))
 
         # Status
         entities.append(CarStatusSensor(coordinator, entry.entry_id, vin, seed_car=car))

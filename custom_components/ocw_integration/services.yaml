@@ -1,0 +1,190 @@
+create_timer:
+  name: Create timer
+  description: Create a scheduled command for a vehicle.
+  fields:
+    entry_id:
+      name: Config entry ID
+      description: The OpenCarWings config entry ID.
+      required: true
+      selector:
+        text:
+    vin:
+      name: VIN
+      description: Vehicle VIN.
+      required: true
+      selector:
+        text:
+    name:
+      name: Timer name
+      required: true
+      selector:
+        text:
+    time:
+      name: Time
+      description: Time in HH:MM format.
+      required: true
+      selector:
+        time:
+    command_type:
+      name: Command type
+      description: OpenCARWINGS command type, such as 3 for A/C on or 4 for A/C off.
+      default: 3
+      selector:
+        number:
+          min: 0
+          max: 15
+          mode: box
+    timer_type:
+      name: Timer type
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 1
+          mode: box
+    enabled:
+      name: Enabled
+      default: true
+      selector:
+        boolean:
+    date:
+      name: Date
+      selector:
+        date:
+    weekday_mon:
+      name: Monday
+      default: false
+      selector:
+        boolean:
+    weekday_tue:
+      name: Tuesday
+      default: false
+      selector:
+        boolean:
+    weekday_wed:
+      name: Wednesday
+      default: false
+      selector:
+        boolean:
+    weekday_thu:
+      name: Thursday
+      default: false
+      selector:
+        boolean:
+    weekday_fri:
+      name: Friday
+      default: false
+      selector:
+        boolean:
+    weekday_sat:
+      name: Saturday
+      default: false
+      selector:
+        boolean:
+    weekday_sun:
+      name: Sunday
+      default: false
+      selector:
+        boolean:
+
+update_timer:
+  name: Update timer
+  description: Update or enable/disable an existing vehicle timer.
+  fields:
+    entry_id:
+      name: Config entry ID
+      required: true
+      selector:
+        text:
+    vin:
+      name: VIN
+      required: true
+      selector:
+        text:
+    timer_id:
+      name: Timer ID
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
+    enabled:
+      name: Enabled
+      selector:
+        boolean:
+    name:
+      name: Timer name
+      selector:
+        text:
+    time:
+      name: Time
+      selector:
+        time:
+    date:
+      name: Date
+      selector:
+        date:
+    command_type:
+      name: Command type
+      selector:
+        number:
+          min: 0
+          max: 15
+          mode: box
+    timer_type:
+      name: Timer type
+      selector:
+        number:
+          min: 0
+          max: 1
+          mode: box
+    weekday_mon:
+      name: Monday
+      selector:
+        boolean:
+    weekday_tue:
+      name: Tuesday
+      selector:
+        boolean:
+    weekday_wed:
+      name: Wednesday
+      selector:
+        boolean:
+    weekday_thu:
+      name: Thursday
+      selector:
+        boolean:
+    weekday_fri:
+      name: Friday
+      selector:
+        boolean:
+    weekday_sat:
+      name: Saturday
+      selector:
+        boolean:
+    weekday_sun:
+      name: Sunday
+      selector:
+        boolean:
+
+delete_timer:
+  name: Delete timer
+  description: Delete an existing vehicle timer.
+  fields:
+    entry_id:
+      name: Config entry ID
+      required: true
+      selector:
+        text:
+    vin:
+      name: VIN
+      required: true
+      selector:
+        text:
+    timer_id:
+      name: Timer ID
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
