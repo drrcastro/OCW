@@ -1,7 +1,9 @@
 """Button platform providing a manual refresh button for OpenCARWINGS."""
 from __future__ import annotations
 
+import asyncio
 import logging
+from datetime import datetime, timezone
 
 from homeassistant.components.button import ButtonEntity
 from typing import Any
@@ -80,7 +82,38 @@ class OpenCarWingsRefreshButton(ButtonEntity):
         return {"entry_id": self._entry_id}
 
 
-class CarRefreshButton(ButtonEntity):
+class CommandButton(ButtonEntity):
+    """Base button that exposes the latest API command response."""
+
+    def _store_command_response(self, command_type: int, response: dict) -> None:
+        data = self.hass.data[DOMAIN][self._entry_id]
+        responses = data.setdefault("last_command_responses", {})
+        responses[self._vin] = {
+            "command_type": command_type,
+            "message": response.get("message") if isinstance(response, dict) else None,
+            "car": response.get("car") if isinstance(response, dict) else None,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        self.async_write_ha_state()
+
+    def _command_attributes(self) -> dict[str, Any]:
+        response = (
+            self.hass.data.get(DOMAIN, {})
+            .get(self._entry_id, {})
+            .get("last_command_responses", {})
+            .get(self._vin, {})
+        )
+        return {
+            "entry_id": self._entry_id,
+            "vin": self._vin,
+            "last_command_type": response.get("command_type"),
+            "last_command_message": response.get("message"),
+            "last_command_car": response.get("car"),
+            "last_command_at": response.get("timestamp"),
+        }
+
+
+class CarRefreshButton(CommandButton):
     """Button that sends a 'Refresh data' command for a specific car."""
 
     def __init__(self, entry_id: str, car: dict) -> None:
@@ -112,28 +145,31 @@ class CarRefreshButton(ButtonEntity):
         """Press the button to send a 'Refresh data' command to the API for this car."""
         client = hass_client(self.hass, self._entry_id)
         try:
-            await client.async_request(
-                "POST",
-                f"/api/command/{self._vin}/",
-                json={"vin": self._vin, "command_type": 1},
-            )
+            response = await client.async_request_car_refresh(self._vin)
+            self._store_command_response(1, response)
         except Exception:  # pragma: no cover - network
             _LOGGER.exception("Failed to request car refresh for %s", self._vin)
             raise
 
-        # After a successful API request, trigger the coordinator to refresh so
-        # the integration's coordinator.last_update_time is updated and the
-        # per-car Last Requested diagnostic sensor will reflect the request time.
-        try:
-            coordinator = self.hass.data[DOMAIN][self._entry_id].get("coordinator")
-            if coordinator:
+        # The vehicle update is asynchronous. Poll the server briefly so this
+        # button returns the newly requested vehicle data instead of the old cache.
+        coordinator = self.hass.data[DOMAIN][self._entry_id].get("coordinator")
+        if not coordinator:
+            return
+
+        for attempt in range(5):
+            try:
                 await coordinator.async_request_refresh()
-        except Exception:  # pragma: no cover - coordinator failure
-            _LOGGER.exception("Failed to trigger coordinator refresh after requesting car refresh for %s", self._vin)
+            except Exception:  # pragma: no cover - coordinator failure
+                _LOGGER.exception("Failed to refresh data after requesting car refresh for %s", self._vin)
+                raise
+
+            if attempt < 4:
+                await asyncio.sleep(2)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"entry_id": self._entry_id, "vin": self._vin}
+        return self._command_attributes()
 
 
 def hass_client(hass, entry_id: str):
@@ -152,7 +188,7 @@ def hass_command_pin(hass, entry_id: str) -> str | None:
     return pin.strip() or None if isinstance(pin, str) else None
 
 
-class CarChargeStartButton(ButtonEntity):
+class CarChargeStartButton(CommandButton):
     """Button that sends a 'Charge start' command for a specific car."""
 
     def __init__(self, entry_id: str, car: dict) -> None:
@@ -185,7 +221,8 @@ class CarChargeStartButton(ButtonEntity):
         """Press the button to send a 'Charge start' command to the API for this car."""
         client = hass_client(self.hass, self._entry_id)
         try:
-            await client.async_send_command(self._vin, self._command_type)
+            response = await client.async_send_command(self._vin, self._command_type)
+            self._store_command_response(self._command_type, response)
         except Exception:  # pragma: no cover - network
             _LOGGER.exception("Failed to send command %s for %s", self._command_type, self._vin)
             raise
@@ -200,10 +237,10 @@ class CarChargeStartButton(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"entry_id": self._entry_id, "vin": self._vin}
+        return self._command_attributes()
 
 
-class CarChargeStart80Button(ButtonEntity):
+class CarChargeStart80Button(CommandButton):
     """Button that sends a 'Charge start 80%' command for a specific car."""
 
     def __init__(self, entry_id: str, car: dict) -> None:
@@ -234,7 +271,8 @@ class CarChargeStart80Button(ButtonEntity):
     async def async_press(self) -> None:
         client = hass_client(self.hass, self._entry_id)
         try:
-            await client.async_send_command(self._vin, self._command_type)
+            response = await client.async_send_command(self._vin, self._command_type)
+            self._store_command_response(self._command_type, response)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
             raise
@@ -247,10 +285,10 @@ class CarChargeStart80Button(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"entry_id": self._entry_id, "vin": self._vin}
+        return self._command_attributes()
 
 
-class CarACOnButton(ButtonEntity):
+class CarACOnButton(CommandButton):
     """Button that sends 'A/C on' command for a specific car."""
 
     def __init__(self, entry_id: str, car: dict) -> None:
@@ -281,7 +319,8 @@ class CarACOnButton(ButtonEntity):
     async def async_press(self) -> None:
         client = hass_client(self.hass, self._entry_id)
         try:
-            await client.async_send_command(self._vin, self._command_type)
+            response = await client.async_send_command(self._vin, self._command_type)
+            self._store_command_response(self._command_type, response)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
             raise
@@ -294,10 +333,10 @@ class CarACOnButton(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"entry_id": self._entry_id, "vin": self._vin}
+        return self._command_attributes()
 
 
-class CarACOffButton(ButtonEntity):
+class CarACOffButton(CommandButton):
     """Button that sends 'A/C off' command for a specific car."""
 
     def __init__(self, entry_id: str, car: dict) -> None:
@@ -328,7 +367,8 @@ class CarACOffButton(ButtonEntity):
     async def async_press(self) -> None:
         client = hass_client(self.hass, self._entry_id)
         try:
-            await client.async_send_command(self._vin, self._command_type)
+            response = await client.async_send_command(self._vin, self._command_type)
+            self._store_command_response(self._command_type, response)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
             raise
@@ -341,10 +381,10 @@ class CarACOffButton(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"entry_id": self._entry_id, "vin": self._vin}
+        return self._command_attributes()
 
 
-class CarHornButton(ButtonEntity):
+class CarHornButton(CommandButton):
     """Button that sends 'Horn' command for a specific car (requires PIN)."""
 
     def __init__(self, entry_id: str, car: dict) -> None:
@@ -376,7 +416,8 @@ class CarHornButton(ButtonEntity):
         client = hass_client(self.hass, self._entry_id)
         try:
             pin = hass_command_pin(self.hass, self._entry_id)
-            await client.async_send_command(self._vin, self._command_type, pin)
+            response = await client.async_send_command(self._vin, self._command_type, pin)
+            self._store_command_response(self._command_type, response)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
             raise
@@ -389,10 +430,10 @@ class CarHornButton(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"entry_id": self._entry_id, "vin": self._vin}
+        return self._command_attributes()
 
 
-class CarLightsButton(ButtonEntity):
+class CarLightsButton(CommandButton):
     """Button that sends 'Lights' command for a specific car (requires PIN)."""
 
     def __init__(self, entry_id: str, car: dict) -> None:
@@ -424,7 +465,8 @@ class CarLightsButton(ButtonEntity):
         client = hass_client(self.hass, self._entry_id)
         try:
             pin = hass_command_pin(self.hass, self._entry_id)
-            await client.async_send_command(self._vin, self._command_type, pin)
+            response = await client.async_send_command(self._vin, self._command_type, pin)
+            self._store_command_response(self._command_type, response)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
             raise
@@ -437,10 +479,10 @@ class CarLightsButton(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"entry_id": self._entry_id, "vin": self._vin}
+        return self._command_attributes()
 
 
-class CarHornLightsButton(ButtonEntity):
+class CarHornLightsButton(CommandButton):
     """Button that sends 'Horn & Lights' command for a specific car (requires PIN)."""
 
     def __init__(self, entry_id: str, car: dict) -> None:
@@ -472,7 +514,8 @@ class CarHornLightsButton(ButtonEntity):
         client = hass_client(self.hass, self._entry_id)
         try:
             pin = hass_command_pin(self.hass, self._entry_id)
-            await client.async_send_command(self._vin, self._command_type, pin)
+            response = await client.async_send_command(self._vin, self._command_type, pin)
+            self._store_command_response(self._command_type, response)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
             raise
@@ -485,10 +528,10 @@ class CarHornLightsButton(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"entry_id": self._entry_id, "vin": self._vin}
+        return self._command_attributes()
 
 
-class CarStopHornLightsButton(ButtonEntity):
+class CarStopHornLightsButton(CommandButton):
     """Button that sends 'Stop Horn & Light' command for a specific car (requires PIN)."""
 
     def __init__(self, entry_id: str, car: dict) -> None:
@@ -520,7 +563,8 @@ class CarStopHornLightsButton(ButtonEntity):
         client = hass_client(self.hass, self._entry_id)
         try:
             pin = hass_command_pin(self.hass, self._entry_id)
-            await client.async_send_command(self._vin, self._command_type, pin)
+            response = await client.async_send_command(self._vin, self._command_type, pin)
+            self._store_command_response(self._command_type, response)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
             raise
@@ -533,10 +577,10 @@ class CarStopHornLightsButton(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"entry_id": self._entry_id, "vin": self._vin}
+        return self._command_attributes()
 
 
-class CarDoorUnlockButton(ButtonEntity):
+class CarDoorUnlockButton(CommandButton):
     """Button that sends 'Door unlock' command for a specific car (requires PIN)."""
 
     def __init__(self, entry_id: str, car: dict) -> None:
@@ -568,7 +612,8 @@ class CarDoorUnlockButton(ButtonEntity):
         client = hass_client(self.hass, self._entry_id)
         try:
             pin = hass_command_pin(self.hass, self._entry_id)
-            await client.async_send_command(self._vin, self._command_type, pin)
+            response = await client.async_send_command(self._vin, self._command_type, pin)
+            self._store_command_response(self._command_type, response)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
             raise
@@ -581,10 +626,10 @@ class CarDoorUnlockButton(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"entry_id": self._entry_id, "vin": self._vin}
+        return self._command_attributes()
 
 
-class CarDoorLockButton(ButtonEntity):
+class CarDoorLockButton(CommandButton):
     """Button that sends 'Door lock' command for a specific car (requires PIN)."""
 
     def __init__(self, entry_id: str, car: dict) -> None:
@@ -616,7 +661,8 @@ class CarDoorLockButton(ButtonEntity):
         client = hass_client(self.hass, self._entry_id)
         try:
             pin = hass_command_pin(self.hass, self._entry_id)
-            await client.async_send_command(self._vin, self._command_type, pin)
+            response = await client.async_send_command(self._vin, self._command_type, pin)
+            self._store_command_response(self._command_type, response)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
             raise
@@ -629,10 +675,10 @@ class CarDoorLockButton(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"entry_id": self._entry_id, "vin": self._vin}
+        return self._command_attributes()
 
 
-class CarRemoteStartButton(ButtonEntity):
+class CarRemoteStartButton(CommandButton):
     """Button that sends 'Remote Start' command for a specific car (requires PIN)."""
 
     def __init__(self, entry_id: str, car: dict) -> None:
@@ -664,7 +710,8 @@ class CarRemoteStartButton(ButtonEntity):
         client = hass_client(self.hass, self._entry_id)
         try:
             pin = hass_command_pin(self.hass, self._entry_id)
-            await client.async_send_command(self._vin, self._command_type, pin)
+            response = await client.async_send_command(self._vin, self._command_type, pin)
+            self._store_command_response(self._command_type, response)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
             raise
@@ -677,10 +724,10 @@ class CarRemoteStartButton(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"entry_id": self._entry_id, "vin": self._vin}
+        return self._command_attributes()
 
 
-class CarRemoteStopButton(ButtonEntity):
+class CarRemoteStopButton(CommandButton):
     """Button that sends 'Remote Stop' command for a specific car (requires PIN)."""
 
     def __init__(self, entry_id: str, car: dict) -> None:
@@ -712,7 +759,8 @@ class CarRemoteStopButton(ButtonEntity):
         client = hass_client(self.hass, self._entry_id)
         try:
             pin = hass_command_pin(self.hass, self._entry_id)
-            await client.async_send_command(self._vin, self._command_type, pin)
+            response = await client.async_send_command(self._vin, self._command_type, pin)
+            self._store_command_response(self._command_type, response)
         except Exception:
             _LOGGER.exception("Failed to send command for %s", self._vin)
             raise
@@ -725,4 +773,4 @@ class CarRemoteStopButton(ButtonEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"entry_id": self._entry_id, "vin": self._vin}
+        return self._command_attributes()

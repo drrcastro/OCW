@@ -253,3 +253,7 @@ class OpenCarWingsAPI:
             raise RequestError(f"Failed to send command: {resp.status}")
 
         return await resp.json()
+
+    async def async_request_car_refresh(self, vin: str) -> dict:
+        """Ask the vehicle to refresh its data on the OpenCARWINGS server."""
+        return await self.async_send_command(vin, 1)
