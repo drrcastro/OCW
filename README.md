@@ -21,6 +21,7 @@ A lightweight Home Assistant integration that connects OpenCARWINGS to Home Assi
 - **Climate & Environment:** Cabin temperature, A/C status, Eco mode, and Battery heater status.
 - **Vehicle Data:** Odometer, Gear, Battery counter, and Battery parameters.
 - **Health & Diagnostics:** State of Health (SoH), Tyre pressure for all four wheels (TPMS), TPMS/maintenance warnings, Diagnostic Trouble Codes (DTC), and TCU signal level.
+- **Battery lease:** Battery lease contract status and the API command for ending the contract are available through the vehicle data and timer service.
 
 ### 📍 Device Tracker
 - **GPS Location:** Tracks the car's physical location (uses `last_location` / `location` returned by the API). 
@@ -32,6 +33,7 @@ A lightweight Home Assistant integration that connects OpenCARWINGS to Home Assi
 - 🚪 **Doors:** Unlock/Lock doors *(Requires PIN)*.
 - 🔊 **Horn & Lights:** Horn, Lights, Horn & Lights, Stop Horn & Lights *(Requires PIN)*.
 - 🚗 **Engine:** Remote Start, Remote Stop *(Requires PIN)*.
+- 📄 **Battery lease:** End Battery Lease Contract *(Requires PIN; use with care)*.
 
 > **Note:** Commands marked with *(Requires PIN)* require a **command PIN** to be set in your OpenCARWINGS account portal. 
 
@@ -66,7 +68,7 @@ Setup is done entirely via the UI. You will need:
   - Copy the full token (format: `Token xxxxxxxxxxxxxx`).
 - **Scan interval:** Polling frequency (default is 15 minutes).
 - **API base URL:** Defaults to `https://opencarwings.viaaq.eu`.
-- **Unit system:** Select Metric or Imperial. Distances, temperature and tyre pressure are converted accordingly.
+- **Units:** Sensor values use metric native units and Home Assistant displays them according to the user's configured unit system.
 
 ### Timers
 

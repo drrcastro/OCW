@@ -14,7 +14,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .api import OpenCarWingsAPI, AuthenticationError, RequestError
 
 DOMAIN = "ocw_integration"
-PLATFORMS = ["sensor", "switch", "device_tracker", "button"]
+PLATFORMS = ["sensor", "switch", "device_tracker", "button", "select"]
 
 # default: 15 minutes
 DEFAULT_SCAN_INTERVAL_MIN = 15
@@ -250,8 +250,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             async def _handle_update_timer(call):
                 entry_id, vin = _resolve_timer_target(hass, call)
                 data = hass.data[DOMAIN][entry_id]
-                timer_id = call.data["timer_id"]
+                timer_id = call.data.get("timer_id")
+                timer_entity_id = call.data.get("timer_entity_id")
+                if timer_id is None and timer_entity_id:
+                    state = hass.states.get(timer_entity_id)
+                    timer_ids = (state.attributes if state else {}).get("timer_names", {})
+                    if state is None or state.domain != "select" or state.state not in timer_ids:
+                        raise ServiceValidationError("The selected timer entity has no valid timer")
+                    timer_id = int(timer_ids[state.state])
+                if timer_id is None:
+                    raise ServiceValidationError("Select a timer or provide timer_id")
                 timer = {key: value for key, value in call.data.items() if key not in {"entry_id", "vin", "device_id", "timer_id"}}
+                timer.pop("timer_entity_id", None)
                 await data["client"].async_update_timer(vin, timer_id, timer)
                 await data["coordinator"].async_request_refresh()
 
@@ -283,7 +293,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 vol.Optional("entry_id"): str,
                 vol.Optional("vin"): str,
                 vol.Optional("device_id"): str,
-                vol.Required("timer_id"): vol.Coerce(int),
+                vol.Optional("timer_id"): vol.Coerce(int),
+                vol.Optional("timer_entity_id"): str,
                 vol.Optional("enabled"): bool,
                 vol.Optional("name"): str,
                 vol.Optional("time"): str,

@@ -223,8 +223,8 @@ class OpenCarWingsAPI:
         
         Args:
             vin: Vehicle VIN
-            command_type: Command type ID (1-15)
-            command_pin: PIN code for commands that require it (7, 8, 9, 10, 11, 12, 13, 14)
+            command_type: Command type ID (1-16)
+            command_pin: PIN code for commands that require it (7, 8, 9, 10, 11, 12, 13, 14, 16)
         
         Returns:
             Response dictionary from the API

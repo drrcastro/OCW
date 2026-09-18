@@ -21,6 +21,10 @@ try:
 except Exception:  # pragma: no cover
     class SensorDeviceClass:  # type: ignore
         BATTERY = "battery"
+        DISTANCE = "distance"
+        ENERGY = "energy"
+        PRESSURE = "pressure"
+        TEMPERATURE = "temperature"
     class SensorStateClass:  # type: ignore
         MEASUREMENT = "measurement"
 
@@ -79,6 +83,23 @@ def _health_getter(key: str) -> Callable[[dict], Any]:
         return health.get(key) if isinstance(health, dict) else None
     return _get
 
+
+def _tpms_getter(position: str) -> Callable[[dict], Any]:
+    """Prefer the API pressure value in bar and fall back to centibar."""
+    def _get(car: dict):
+        health = car.get("veh_health") or {}
+        if not isinstance(health, dict):
+            return None
+        value = health.get(f"tpms_{position}_float")
+        if value is not None:
+            return value
+        value = health.get(f"tpms_{position}")
+        try:
+            return float(value) / 100 if value is not None else None
+        except (TypeError, ValueError):
+            return None
+    return _get
+
 def _to_float(v: Any) -> float | None:
     if v is None:
         return None
@@ -87,11 +108,6 @@ def _to_float(v: Any) -> float | None:
     except Exception:
         return None
 
-
-def _tpms_bar(v: Any) -> float | None:
-    """Convert the API's TPMS centibar value to bar."""
-    value = _to_float(v)
-    return round(value / 100, 2) if value is not None else None
 
 def _round_1(v: Any) -> float | None:
     if v is None:
@@ -106,17 +122,6 @@ def _to_kwh(v: Any) -> float | None:
     value = _to_float(v)
     return round(value / 1000, 2) if value is not None else None
 
-
-def _convert_unit_value(key: str, value: Any, unit_system: str) -> Any:
-    if unit_system != "imperial" or value is None:
-        return value
-    if key in {"range_acon", "range_acoff", "odometer", "health_mileage"}:
-        return round(float(value) * 0.621371, 1)
-    if key == "cabin_temp":
-        return round(float(value) * 9 / 5 + 32, 1)
-    if key in {"tpms_fl", "tpms_fr", "tpms_rl", "tpms_rr"}:
-        return round(float(value) * 14.5038, 2)
-    return value
 
 # -----------------------------
 # Base per-car entity
@@ -245,6 +250,7 @@ CAR_SENSORS: list[CarSensorSpec] = [
         "Range (A/C on)",
         _ev_getter("range_acon"),
         transform=_to_float,
+        device_class=SensorDeviceClass.DISTANCE,
         unit_of_measurement="km",
     ),
     CarSensorSpec(
@@ -252,6 +258,7 @@ CAR_SENSORS: list[CarSensorSpec] = [
         "Range (A/C off)",
         _ev_getter("range_acoff"),
         transform=_to_float,
+        device_class=SensorDeviceClass.DISTANCE,
         unit_of_measurement="km",
     ),
     CarSensorSpec("soc", "State of Charge", _ev_getter("soc"), transform=_round_1, device_class=SensorDeviceClass.BATTERY, unit_of_measurement=PERCENTAGE),
@@ -264,19 +271,19 @@ CAR_SENSORS: list[CarSensorSpec] = [
     CarSensorSpec("ac_status", "AC Status", _ev_getter("ac_status")),
     CarSensorSpec("eco_mode", "Eco Mode", _ev_getter("eco_mode")),
     CarSensorSpec("car_running", "Running", _ev_getter("car_running")),
-    CarSensorSpec("odometer", "Odometer", lambda car: car.get("odometer"), transform=_to_int, unit_of_measurement="km",),
+    CarSensorSpec("odometer", "Odometer", lambda car: car.get("odometer"), transform=_to_int, device_class=SensorDeviceClass.DISTANCE, unit_of_measurement="km",),
     CarSensorSpec("full_chg_time", "Full Charge Time", _ev_getter("full_chg_time"), transform=_to_int, unit_of_measurement="min"),
     CarSensorSpec("limit_chg_time", "Limit Charge Time", _ev_getter("limit_chg_time"), transform=_to_int, unit_of_measurement="min"),
     CarSensorSpec("obc_6kw", "OBC 6kW", _ev_getter("obc_6kw"), transform=_to_int, unit_of_measurement="min"),
     CarSensorSpec("car_gear", "Gear", _ev_getter("car_gear"), transform=_gear_to_str),
     CarSensorSpec("soh", "Battery Health", _ev_getter("soh"), transform=_round_1, unit_of_measurement=PERCENTAGE),
-    CarSensorSpec("wh_content", "Remaining Energy", _ev_getter("wh_content"), transform=_to_kwh, unit_of_measurement="kWh"),
+    CarSensorSpec("wh_content", "Remaining Energy", _ev_getter("wh_content"), transform=_to_kwh, device_class=SensorDeviceClass.ENERGY, unit_of_measurement="kWh"),
     CarSensorSpec("cap_bars", "Capacity Bars", _ev_getter("cap_bars"), transform=_to_int, state_class=SensorStateClass.MEASUREMENT),
     CarSensorSpec("gids", "Available GIDs", _ev_getter("gids"), transform=_to_int, state_class=SensorStateClass.MEASUREMENT),
     CarSensorSpec("counter", "Battery Counter", _ev_getter("counter"), transform=_to_int, state_class=SensorStateClass.MEASUREMENT),
     CarSensorSpec("max_gids", "Maximum GIDs", _ev_getter("max_gids"), transform=_to_int, state_class=SensorStateClass.MEASUREMENT),
     CarSensorSpec("param21", "Battery Parameter 21", _ev_getter("param21"), transform=_to_int),
-    CarSensorSpec("cabin_temp", "Cabin Temperature", _ev_getter("cabin_temp"), transform=_to_float, unit_of_measurement="°C"),
+    CarSensorSpec("cabin_temp", "Cabin Temperature", _ev_getter("cabin_temp"), transform=_to_float, device_class=SensorDeviceClass.TEMPERATURE, unit_of_measurement="°C"),
     CarSensorSpec("force_soc_display", "Forced SOC Display", _ev_getter("force_soc_display")),
     CarSensorSpec("obc_6kw_avail", "OBC 6kW Available", _ev_getter("obc_6kw_avail")),
     CarSensorSpec("batt_heater_avail", "Battery Heater Available", _ev_getter("batt_heater_avail")),
@@ -290,23 +297,23 @@ CAR_SENSORS: list[CarSensorSpec] = [
     CarSensorSpec("navi_version", "Navigation Version", lambda car: car.get("navi_version")),
     CarSensorSpec("map_version", "Map Version", lambda car: car.get("map_version")),
     CarSensorSpec("carrier", "Mobile Carrier", lambda car: car.get("carrier")),
-    CarSensorSpec("tpms_fl", "Tyre Pressure Front Left", _health_getter("tpms_fl"), transform=_tpms_bar, unit_of_measurement="bar"),
-    CarSensorSpec("tpms_fr", "Tyre Pressure Front Right", _health_getter("tpms_fr"), transform=_tpms_bar, unit_of_measurement="bar"),
-    CarSensorSpec("tpms_rl", "Tyre Pressure Rear Left", _health_getter("tpms_rl"), transform=_tpms_bar, unit_of_measurement="bar"),
-    CarSensorSpec("tpms_rr", "Tyre Pressure Rear Right", _health_getter("tpms_rr"), transform=_tpms_bar, unit_of_measurement="bar"),
+    CarSensorSpec("tpms_fl", "Tyre Pressure Front Left", _tpms_getter("fl"), transform=_to_float, device_class=SensorDeviceClass.PRESSURE, unit_of_measurement="bar"),
+    CarSensorSpec("tpms_fr", "Tyre Pressure Front Right", _tpms_getter("fr"), transform=_to_float, device_class=SensorDeviceClass.PRESSURE, unit_of_measurement="bar"),
+    CarSensorSpec("tpms_rl", "Tyre Pressure Rear Left", _tpms_getter("rl"), transform=_to_float, device_class=SensorDeviceClass.PRESSURE, unit_of_measurement="bar"),
+    CarSensorSpec("tpms_rr", "Tyre Pressure Rear Right", _tpms_getter("rr"), transform=_to_float, device_class=SensorDeviceClass.PRESSURE, unit_of_measurement="bar"),
+    CarSensorSpec("lease_contract", "Battery Lease Contract", _ev_getter("lease_contract")),
     CarSensorSpec("tpms_light", "TPMS Warning", _health_getter("tpms_light")),
     CarSensorSpec("maintenance_alert", "Maintenance Alert", _health_getter("maintenance_alert")),
-    CarSensorSpec("health_mileage", "Health Report Mileage", _health_getter("mileage"), transform=_to_float, unit_of_measurement="km"),
+    CarSensorSpec("health_mileage", "Health Report Mileage", _health_getter("mileage"), transform=_to_float, device_class=SensorDeviceClass.DISTANCE, unit_of_measurement="km"),
 ]
 
 
 class CarValueSensor(OpenCarwingsCarEntity, SensorEntity):
     """Generic per-car sensor based on CarSensorSpec."""
 
-    def __init__(self, coordinator, entry_id: str, vin: str, spec: CarSensorSpec, seed_car: dict | None = None, unit_system: str = "metric") -> None:
+    def __init__(self, coordinator, entry_id: str, vin: str, spec: CarSensorSpec, seed_car: dict | None = None) -> None:
         OpenCarwingsCarEntity.__init__(self, coordinator, entry_id, vin, seed_car)
         self._spec = spec
-        self._unit_system = unit_system
         self._attr_unique_id = f"ocw_integration_{spec.key}_{vin}"
         if spec.device_class:
             self._attr_device_class = spec.device_class
@@ -314,9 +321,6 @@ class CarValueSensor(OpenCarwingsCarEntity, SensorEntity):
             self._attr_state_class = spec.state_class
         if spec.unit_of_measurement:
             self._attr_native_unit_of_measurement = spec.unit_of_measurement
-            if unit_system == "imperial":
-                imperial_units = {"km": "mi", "°C": "°F", "bar": "psi"}
-                self._attr_native_unit_of_measurement = imperial_units.get(spec.unit_of_measurement, spec.unit_of_measurement)
         self._attr_icon = spec.icon or SENSOR_ICONS.get(spec.key)
 
     @property
@@ -330,7 +334,7 @@ class CarValueSensor(OpenCarwingsCarEntity, SensorEntity):
 
         if self._spec.transform:
             val = self._spec.transform(val)
-        return _convert_unit_value(self._spec.key, val, self._unit_system)
+        return val
 
 
 # -----------------------------
@@ -532,9 +536,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             continue
 
         # Generic value sensors
-        unit_system = entry.options.get("unit_system", entry.data.get("unit_system", "metric"))
         for spec in CAR_SENSORS:
-            entities.append(CarValueSensor(coordinator, entry.entry_id, vin, spec, seed_car=car, unit_system=unit_system))
+            entities.append(CarValueSensor(coordinator, entry.entry_id, vin, spec, seed_car=car))
 
         # Status
         entities.append(CarStatusSensor(coordinator, entry.entry_id, vin, seed_car=car))
