@@ -155,20 +155,12 @@ update_timer:
           integration: ocw_integration
     timer_id:
       name: Timer ID
-      description: The numeric ID of the timer. Use timer_entity_id for the selectable timer list.
-      required: false
+      description: The numeric ID of the timer. Find it in the timer data returned by the API or in Home Assistant's service trace.
+      required: true
       selector:
         number:
           min: 1
           mode: box
-    timer_entity_id:
-      name: Timer to update
-      description: Select the timer entity for this car. Its options are refreshed from the API.
-      required: false
-      selector:
-        entity:
-          domain: select
-          integration: ocw_integration
     enabled:
       name: Enable timer
       description: Turn on to activate the timer, or turn off to pause it without deleting it.

@@ -34,7 +34,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain="ocw_integration"):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> config_entries.OptionsFlow:
         """Return the flow used by Home Assistant's Configure button."""
         return OptionsFlowHandler(config_entry)
 
@@ -43,7 +43,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain="ocw_integration"):
         errors = {}
         if user_input is not None:
             api_key = user_input.get("api_key", "").strip()
-            api_base = user_input.get("api_base_url", DEFAULT_API_BASE_URL)
+            api_base = user_input.get("api_base_url", DEFAULT_API_BASE_URL).strip()
+            scan_int = int(user_input.get("scan_interval", DEFAULT_SCAN_INTERVAL_MIN))
 
             if not api_key:
                 errors["api_key"] = "required"
@@ -62,7 +63,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain="ocw_integration"):
                             "api_key": api_key,
                             "command_pin": user_input.get("command_pin", "").strip(),
                             # persist initial scan interval choice
-                            "scan_interval": user_input.get("scan_interval", DEFAULT_SCAN_INTERVAL_MIN),
+                            "scan_interval": scan_int,
                             "api_base_url": api_base,
                         },
                     )
@@ -74,18 +75,22 @@ class ConfigFlow(config_entries.ConfigFlow, domain="ocw_integration"):
 
             scan_selector = selector.SelectSelector(
                 selector.SelectSelectorConfig(
-                    options=[{"value": v, "label": l} for v, l in SCAN_INTERVAL_CHOICES]
+                    options=[
+                        selector.SelectOptionDict(value=str(v), label=l)
+                        for v, l in SCAN_INTERVAL_CHOICES
+                    ],
+                    mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             )
         except Exception:
             # selector not available in minimal test stubs — use numeric options
-            scan_selector = vol.In(SCAN_INTERVAL_OPTIONS)
+            scan_selector = vol.In([str(c[0]) for c in SCAN_INTERVAL_CHOICES])
 
         data_schema = vol.Schema(
             {
                 vol.Required("api_key"): str,
                 vol.Optional("command_pin", default=""): str,
-                vol.Required("scan_interval", default=DEFAULT_SCAN_INTERVAL_MIN): scan_selector,
+                vol.Required("scan_interval", default=str(DEFAULT_SCAN_INTERVAL_MIN)): scan_selector,
                 vol.Required("api_base_url", default=DEFAULT_API_BASE_URL): str,
             }
         )
@@ -94,26 +99,60 @@ class ConfigFlow(config_entries.ConfigFlow, domain="ocw_integration"):
 
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
-    def __init__(self, config_entry):
-        self.config_entry = config_entry
+    def __init__(self, config_entry: config_entries.ConfigEntry | None = None) -> None:
+        """Initialize options flow."""
+        if config_entry is not None:
+            self._config_entry = config_entry
+
+    @property
+    def _entry(self) -> config_entries.ConfigEntry | None:
+        """Return the config entry across different Home Assistant versions."""
+        if hasattr(self, "config_entry") and self.config_entry is not None:
+            return self.config_entry
+        return getattr(self, "_config_entry", None)
 
     async def async_step_init(self, user_input=None):
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            scan_int = int(user_input.get("scan_interval", DEFAULT_SCAN_INTERVAL_MIN))
+            return self.async_create_entry(
+                title="",
+                data={
+                    "command_pin": user_input.get("command_pin", "").strip(),
+                    "scan_interval": scan_int,
+                    "api_base_url": user_input.get("api_base_url", DEFAULT_API_BASE_URL).strip(),
+                },
+            )
 
-        current_scan = self.config_entry.options.get("scan_interval", self.config_entry.data.get("scan_interval", DEFAULT_SCAN_INTERVAL_MIN))
-        current_api = self.config_entry.options.get("api_base_url", self.config_entry.data.get("api_base_url", DEFAULT_API_BASE_URL))
-        current_pin = self.config_entry.options.get("command_pin", self.config_entry.data.get("command_pin", ""))
+        entry = self._entry
+        current_scan = str(
+            entry.options.get("scan_interval", entry.data.get("scan_interval", DEFAULT_SCAN_INTERVAL_MIN))
+            if entry
+            else DEFAULT_SCAN_INTERVAL_MIN
+        )
+        current_api = (
+            entry.options.get("api_base_url", entry.data.get("api_base_url", DEFAULT_API_BASE_URL))
+            if entry
+            else DEFAULT_API_BASE_URL
+        )
+        current_pin = (
+            entry.options.get("command_pin", entry.data.get("command_pin", ""))
+            if entry
+            else ""
+        )
         try:
             from homeassistant.helpers import selector
 
             scan_selector = selector.SelectSelector(
                 selector.SelectSelectorConfig(
-                    options=[{"value": v, "label": l} for v, l in SCAN_INTERVAL_CHOICES]
+                    options=[
+                        selector.SelectOptionDict(value=str(v), label=l)
+                        for v, l in SCAN_INTERVAL_CHOICES
+                    ],
+                    mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             )
         except Exception:
-            scan_selector = vol.In(SCAN_INTERVAL_OPTIONS)
+            scan_selector = vol.In([str(c[0]) for c in SCAN_INTERVAL_CHOICES])
 
         return self.async_show_form(
             step_id="init",

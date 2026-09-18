@@ -85,7 +85,7 @@ def _health_getter(key: str) -> Callable[[dict], Any]:
 
 
 def _tpms_getter(position: str) -> Callable[[dict], Any]:
-    """Prefer the API pressure value in bar and fall back to centibar."""
+    """Get tyre pressure in kPa from API (preferring float over int)."""
     def _get(car: dict):
         health = car.get("veh_health") or {}
         if not isinstance(health, dict):
@@ -95,7 +95,7 @@ def _tpms_getter(position: str) -> Callable[[dict], Any]:
             return value
         value = health.get(f"tpms_{position}")
         try:
-            return float(value) / 100 if value is not None else None
+            return float(value) if value is not None else None
         except (TypeError, ValueError):
             return None
     return _get
@@ -297,10 +297,10 @@ CAR_SENSORS: list[CarSensorSpec] = [
     CarSensorSpec("navi_version", "Navigation Version", lambda car: car.get("navi_version")),
     CarSensorSpec("map_version", "Map Version", lambda car: car.get("map_version")),
     CarSensorSpec("carrier", "Mobile Carrier", lambda car: car.get("carrier")),
-    CarSensorSpec("tpms_fl", "Tyre Pressure Front Left", _tpms_getter("fl"), transform=_to_float, device_class=SensorDeviceClass.PRESSURE, unit_of_measurement="bar"),
-    CarSensorSpec("tpms_fr", "Tyre Pressure Front Right", _tpms_getter("fr"), transform=_to_float, device_class=SensorDeviceClass.PRESSURE, unit_of_measurement="bar"),
-    CarSensorSpec("tpms_rl", "Tyre Pressure Rear Left", _tpms_getter("rl"), transform=_to_float, device_class=SensorDeviceClass.PRESSURE, unit_of_measurement="bar"),
-    CarSensorSpec("tpms_rr", "Tyre Pressure Rear Right", _tpms_getter("rr"), transform=_to_float, device_class=SensorDeviceClass.PRESSURE, unit_of_measurement="bar"),
+    CarSensorSpec("tpms_fl", "Tyre Pressure Front Left", _tpms_getter("fl"), transform=_to_float, device_class=SensorDeviceClass.PRESSURE, unit_of_measurement="kPa"),
+    CarSensorSpec("tpms_fr", "Tyre Pressure Front Right", _tpms_getter("fr"), transform=_to_float, device_class=SensorDeviceClass.PRESSURE, unit_of_measurement="kPa"),
+    CarSensorSpec("tpms_rl", "Tyre Pressure Rear Left", _tpms_getter("rl"), transform=_to_float, device_class=SensorDeviceClass.PRESSURE, unit_of_measurement="kPa"),
+    CarSensorSpec("tpms_rr", "Tyre Pressure Rear Right", _tpms_getter("rr"), transform=_to_float, device_class=SensorDeviceClass.PRESSURE, unit_of_measurement="kPa"),
     CarSensorSpec("lease_contract", "Battery Lease Contract", _ev_getter("lease_contract")),
     CarSensorSpec("tpms_light", "TPMS Warning", _health_getter("tpms_light")),
     CarSensorSpec("maintenance_alert", "Maintenance Alert", _health_getter("maintenance_alert")),

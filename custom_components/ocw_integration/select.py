@@ -24,7 +24,7 @@ class CarTimerSelect(CoordinatorEntity, SelectEntity):
 
     @property
     def name(self) -> str:
-        return f"{self._car.get('nickname') or self._car.get('model_name') or self._vin} Timer"
+        return f"{self._car.get('nickname') or self._car.get('model_name') or self._vin} Timer ID"
 
     @property
     def unique_id(self) -> str:
