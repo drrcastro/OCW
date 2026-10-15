@@ -14,7 +14,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .api import OpenCarWingsAPI, AuthenticationError, RequestError
 
 DOMAIN = "ocw_integration"
-PLATFORMS = ["sensor", "switch", "device_tracker", "button", "select"]
+PLATFORMS = ["sensor", "switch", "device_tracker", "button", "select", "binary_sensor"]
 
 # default: 15 minutes
 DEFAULT_SCAN_INTERVAL_MIN = 15

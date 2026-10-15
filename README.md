@@ -18,6 +18,7 @@ A lightweight Home Assistant integration that connects OpenCARWINGS to Home Assi
 ### 📊 Sensors
 - **Battery & Range:** State of Charge (SoC), Range (A/C on / A/C off), Remaining energy (kWh), Capacity bars, GIDs, and maximum GIDs.
 - **Charging:** Plugged in status, Charging status, Quick charging, Charge finish time, and OBC status.
+- **Charging binary sensors:** Power available and charging interrupted.
 - **Climate & Environment:** Cabin temperature, A/C status, Eco mode, and Battery heater status.
 - **Vehicle Data:** Odometer, Gear, Battery counter, and Battery parameters.
 - **Health & Diagnostics:** State of Health (SoH), Tyre pressure for all four wheels (TPMS), TPMS/maintenance warnings, Diagnostic Trouble Codes (DTC), and TCU signal level.
