@@ -1,6 +1,4 @@
 {
   "name": "OpenCarWings",
-  "content_in_root": false,
-  "render_readme": true,
-  "domains": ["ocw_integration"]
+  "render_readme": true
 }
