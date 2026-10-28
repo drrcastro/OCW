@@ -33,45 +33,32 @@
 ## 📦 Supported Entities
 
 ### 📊 Sensors (`sensor`)
-
-| Category | Entities Included |
-| :--- | :--- |
-| **🔋 Battery & Range** | `State of Charge` (%), `State of Charge Display` (%), `Range (A/C on)` (km), `Range (A/C off)` (km), `Remaining Energy` (kWh), `Battery Health (SoH)` (%), `Charge Bars`, `Capacity Bars`, `Available GIDs`, `Maximum GIDs`, `Battery Counter`, `Battery Parameter 21`, `Forced SOC Display`, `Battery Lease Contract` |
-| **⚡ Charging** | `Charge Cable` (`plugged` / `unplugged`), `Charging`, `Quick Charging`, `Charge Finish`, `Full Charge Time` (min), `Limit Charge Time` (min), `OBC 6kW` (min), `OBC 6kW Available` |
-| **❄️ Climate & Thermal** | `Cabin Temperature` (°C), `AC Status`, `Battery Heater Available`, `Battery Heater Active` |
-| **🚘 Vehicle State** | `Status` (`charging`, `running`, `ac_on`, `idle`), `Running`, `Eco Mode`, `Gear` (`Parked`, `Drive`, `Reverse`), `Odometer` (km), `Last Updated`, `Last Requested` |
-| **🛞 Health & TPMS** | `Tyre Pressure Front Left / Front Right / Rear Left / Rear Right` (kPa), `TPMS Warning`, `Maintenance Alert`, `Health Report Mileage` (km), `DTCs` *(Diagnostic sensor with full DTC list in attributes)* |
-| **📡 TCU & Connectivity** | `Signal Level`, `Mobile Carrier`, `TCU Model`, `TCU Serial`, `TCU Firmware`, `TCU Type`, `TCU Version`, `Navigation Version`, `Map Version` |
-
+- **🔋 Battery & Range:** State of Charge (SoC), State of Charge Display, Range (A/C on / A/C off), Remaining Energy (kWh), Battery Health (SoH), Charge Bars, Capacity Bars, Available GIDs, Maximum GIDs, Battery Counter, Battery Parameter 21, Forced SOC Display, and Battery Lease Contract.
+- **⚡ Charging:** Charge Cable (`plugged` / `unplugged`), Charging status, Quick Charging, Charge Finish, Full Charge Time, Limit Charge Time, OBC 6kW time, and OBC 6kW Available.
+- **❄️ Climate & Thermal:** Cabin Temperature (°C), AC Status, Battery Heater Available, and Battery Heater Active.
+- **🚘 Vehicle State:** Status (`charging`, `running`, `ac_on`, `idle`), Running, Eco Mode, Gear (`Parked`, `Drive`, `Reverse`), Odometer (km), Last Updated, and Last Requested.
+- **🛞 Health & TPMS:** Tyre Pressure for all four wheels (FL, FR, RL, RR in kPa), TPMS Warning, Maintenance Alert, Health Report Mileage, and Diagnostic Trouble Codes (`DTCs`, with full trouble code details in attributes).
+- **📡 TCU & Connectivity:** Signal Level, Mobile Carrier, TCU Model, TCU Serial, TCU Firmware, TCU Type, TCU Version, Navigation Version, and Map Version.
 ### 🔌 Binary Sensors (`binary_sensor`)
-
-| Entity | Device Class | Description |
-| :--- | :--- | :--- |
-| **Power Available** | `power` | Indicates whether external charging power is available to the vehicle. |
-| **Charging Interrupted** | `problem` | Alerts when an active charging session has been unexpectedly interrupted. |
+- **⚡ Power Available:** Indicates whether external charging power is available to the vehicle.
+- **⚠️ Charging Interrupted:** Alerts when an active charging session has been unexpectedly interrupted.
 
 ### 📍 Location (`device_tracker`)
-
-| Entity | Description |
-| :--- | :--- |
-| **Car Location** | Tracks the vehicle's GPS coordinates (`latitude` / `longitude`), movement state, speed, and heading. |
+- **🗺️ Car Location:** Tracks the vehicle's physical GPS coordinates (`latitude` / `longitude`), movement state, speed, and heading.
 
 ### 🎛️ Controls (`switch`, `button`, `select`)
-
-| Platform | Entity | Requires PIN | Description |
-| :--- | :--- | :---: | :--- |
-| `switch` | **Car A/C** | No | Toggle cabin climate control On or Off (automatically polls for confirmation). |
-| `select` | **Timer ID** | No | Select an active car timer; exposes all configured timers in state attributes. |
-| `button` | **OpenCARWINGS Refresh** | No | Immediately refresh coordinator data from the OpenCARWINGS server. |
-| `button` | **Refresh Data** | No | Request an immediate wakeup and data sync directly from the vehicle TCU. |
-| `button` | **Start Charge** | No | Start charging to 100%. |
-| `button` | **Start Charge 80%** | No | Start charging with an 80% limit. |
-| `button` | **Horn / Lights / Horn & Lights / Stop** | No | Trigger or stop the vehicle's horn and/or hazard lights. |
-| `button` | **Unlock Doors / Lock Doors** | **Yes** 🔒 | Remotely unlock or lock the vehicle doors. |
-| `button` | **Remote Start / Remote Stop** | **Yes** 🔒 | Remotely start or stop the vehicle. |
+- **❄️ Climate (`switch`):** Turn A/C On or Off (automatically polls for vehicle confirmation).
+- **⏰ Timer Selector (`select`):** Select an active vehicle timer (`Timer ID`) and view all configured timers in its state attributes.
+- **🔄 Refresh (`button`):**
+  - **OpenCARWINGS Refresh:** Immediately refresh coordinator data from the OpenCARWINGS server.
+  - **Refresh Data:** Request an immediate wakeup and data sync directly from the vehicle TCU.
+- **🔋 Charging (`button`):** Start Charge (100%), Start Charge 80%.
+- **🔊 Horn & Lights (`button`):** Horn, Lights, Horn & Lights, Stop Horn & Lights.
+- **🚪 Doors (`button`):** Unlock Doors, Lock Doors *(Requires PIN 🔒)*.
+- **🚗 Engine (`button`):** Remote Start, Remote Stop *(Requires PIN 🔒)*.
 
 > [!IMPORTANT]
-> Commands marked with **Yes 🔒** require a **Command PIN** configured in your OpenCARWINGS account portal and entered in the integration settings.
+> Commands marked with *(Requires PIN 🔒)* require a **Command PIN** configured in your OpenCARWINGS account portal and entered in the integration settings.
 
 ---
 
@@ -100,12 +87,10 @@
 
 Configuration is managed entirely through the Home Assistant UI (and can be updated anytime via the **Configure** button on the integration entry):
 
-| Parameter | Default | Description |
-| :--- | :--- | :--- |
-| **API Key** | *(Required)* | Personal API token from [OpenCARWINGS Portal](https://opencarwings.viaaq.eu) → *Account Settings* → *API Token* (format: `Token xxxxxxxxxxxxxx`). |
-| **Command PIN** | *(Optional)* | Required only for security-sensitive commands (Doors Lock/Unlock, Remote Start/Stop). |
-| **Scan Interval** | `15 minutes` | Cloud polling interval (`1 min`, `5 min`, `10 min`, `15 min`, `30 min`, `1 h`, `3 h`, `6 h`, `12 h`, or `1 day`). |
-| **API Base URL** | `https://opencarwings.viaaq.eu` | Base URL of your OpenCARWINGS server instance. |
+- **🔑 API Key** *(Required)*: Your personal API token from the [OpenCARWINGS Portal](https://opencarwings.viaaq.eu) → *Account Settings* → *API Token* (copy the full string in the format `Token xxxxxxxxxxxxxx`).
+- **🔒 Command PIN** *(Optional)*: Required only for security-sensitive commands (Doors Lock/Unlock and Remote Start/Stop).
+- **⏱️ Scan Interval** *(Default: `15 minutes`)*: Cloud polling interval (`1 min`, `5 min`, `10 min`, `15 min`, `30 min`, `1 h`, `3 h`, `6 h`, `12 h`, or `1 day`).
+- **🌐 API Base URL** *(Default: `https://opencarwings.viaaq.eu`)*: Base URL of your OpenCARWINGS server instance.
 
 > [!NOTE]
 > All sensors report native metric units (`km`, `kWh`, `°C`, `kPa`) and Home Assistant automatically converts them to match your profile's unit system.
