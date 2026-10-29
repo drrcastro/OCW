@@ -26,6 +26,7 @@
 - **📊 Rich Telemetry & Diagnostics:** State of Charge (SoC), State of Health (SoH), GIDs, remaining energy (kWh), range estimates, TPMS tyre pressures, and Diagnostic Trouble Codes (DTCs).
 - **⏰ Native Timer Management:** View active vehicle timers via a `select` entity and create, update, pause, or delete schedules through Home Assistant services.
 - **📍 GPS Tracking:** Real-time vehicle location tracking on your Home Assistant map.
+- **🗺️ Built-in ABRP Live Telemetry Bridge:** Optionally enter your *A Better Routeplanner* User Token in the integration settings to automatically stream live battery, charging, power, speed, temperature, and GPS telemetry to ABRP—no external scripts or cron jobs required.
 - **🔑 Simple UI Setup:** Quick authentication using your Personal API Token with configurable polling intervals.
 
 ---
@@ -89,6 +90,7 @@ Configuration is managed entirely through the Home Assistant UI (and can be upda
 
 - **🔑 API Key** *(Required)*: Your personal API token from the [OpenCARWINGS Portal](https://opencarwings.viaaq.eu) → *Account Settings* → *API Token* (copy the full string in the format `Token xxxxxxxxxxxxxx`).
 - **🔒 Command PIN** *(Optional)*: Required only for security-sensitive commands (Doors Lock/Unlock and Remote Start/Stop).
+- **🗺️ ABRP User Token** *(Optional)*: Your generic telemetry token from [A Better Routeplanner](https://abetterrouteplanner.com/) (*Car Settings → Live Data → Generic*). When provided, the integration automatically forwards live vehicle telemetry (SoC, SoH, SoE, degraded usable capacity, power, speed, temperatures, odometer, TPMS, and GPS) to ABRP on every update plus a 5-minute keepalive heartbeat.
 - **⏱️ Scan Interval** *(Default: `15 minutes`)*: Cloud polling interval (`1 min`, `5 min`, `10 min`, `15 min`, `30 min`, `1 h`, `3 h`, `6 h`, `12 h`, or `1 day`).
 - **🌐 API Base URL** *(Default: `https://opencarwings.viaaq.eu`)*: Base URL of your OpenCARWINGS server instance.
 

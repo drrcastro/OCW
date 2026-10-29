@@ -193,6 +193,23 @@ class OpenCarWingsAPI:
 
         return await resp.json()
 
+    async def async_get_latest_trip(self, vin: str) -> dict | None:
+        """Retrieve the latest probe trip record for extra temperature telemetry."""
+        vin = (vin or "").strip()
+        if not vin:
+            return None
+        try:
+            resp = await self.async_request("GET", f"/api/car/{vin}/probe/trips", params={"page_size": 1})
+            if resp.status != 200:
+                return None
+            data = await resp.json()
+            results = data.get("results") if isinstance(data, dict) else None
+            if results and isinstance(results, list) and len(results) > 0:
+                return results[0]
+        except Exception as err:
+            _LOGGER.debug("Could not fetch probe/trips for %s: %s", vin, err)
+        return None
+
     async def async_list_timers(self, vin: str) -> list[dict]:
         resp = await self.async_request("GET", f"/api/car/{vin}/timers/")
         if resp.status != 200:

@@ -1,0 +1,49 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "OpenCarWings",
+        "description": "Configure your OpenCARWINGS integration.",
+        "data": {
+          "api_key": "API Key",
+          "command_pin": "Command PIN (optional)",
+          "abrp_user_token": "ABRP User Token (optional)",
+          "scan_interval": "Scan Interval",
+          "api_base_url": "API Base URL"
+        },
+        "data_description": {
+          "api_key": "Personal API Token from the OpenCARWINGS portal (Account Settings -> API Token).",
+          "command_pin": "Required only for security-sensitive commands (Doors Lock/Unlock and Remote Start/Stop).",
+          "abrp_user_token": "Automatically forward live vehicle telemetry to A Better Routeplanner (ABRP -> Car Settings -> Live Data -> Generic). Leave blank to disable.",
+          "scan_interval": "How often Home Assistant polls the OpenCARWINGS cloud.",
+          "api_base_url": "Base URL of your OpenCARWINGS server instance."
+        }
+      }
+    },
+    "error": {
+      "required": "API Key is required.",
+      "auth": "Invalid API Key or authentication failed.",
+      "unknown": "Unexpected error communicating with OpenCARWINGS."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "OpenCarWings Options",
+        "data": {
+          "command_pin": "Command PIN (optional)",
+          "abrp_user_token": "ABRP User Token (optional)",
+          "scan_interval": "Scan Interval",
+          "api_base_url": "API Base URL"
+        },
+        "data_description": {
+          "command_pin": "Required only for security-sensitive commands (Doors Lock/Unlock and Remote Start/Stop).",
+          "abrp_user_token": "Automatically forward live vehicle telemetry to A Better Routeplanner (ABRP -> Car Settings -> Live Data -> Generic). Leave blank to disable.",
+          "scan_interval": "How often Home Assistant polls the OpenCARWINGS cloud.",
+          "api_base_url": "Base URL of your OpenCARWINGS server instance."
+        }
+      }
+    }
+  }
+}
+

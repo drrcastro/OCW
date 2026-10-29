@@ -1,0 +1,49 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "OpenCarWings",
+        "description": "Configure a sua integração OpenCARWINGS.",
+        "data": {
+          "api_key": "Chave de API (API Key)",
+          "command_pin": "PIN de Comandos (opcional)",
+          "abrp_user_token": "Token de Utilizador ABRP (opcional)",
+          "scan_interval": "Intervalo de Atualização",
+          "api_base_url": "URL Base da API"
+        },
+        "data_description": {
+          "api_key": "Token pessoal de API obtido no portal OpenCARWINGS (Account Settings -> API Token).",
+          "command_pin": "Necessário apenas para comandos sensíveis (Trancar/Destrancar Portas e Arranque Remoto).",
+          "abrp_user_token": "Envia automaticamente a telemetria em tempo real para o A Better Routeplanner (ABRP -> Car Settings -> Live Data -> Generic). Deixe em branco para desativar.",
+          "scan_interval": "Frequência com que o Home Assistant consulta a cloud OpenCARWINGS.",
+          "api_base_url": "URL base do seu servidor OpenCARWINGS."
+        }
+      }
+    },
+    "error": {
+      "required": "A Chave de API é obrigatória.",
+      "auth": "Chave de API inválida ou falha na autenticação.",
+      "unknown": "Erro inesperado ao comunicar com o OpenCARWINGS."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opções OpenCarWings",
+        "data": {
+          "command_pin": "PIN de Comandos (opcional)",
+          "abrp_user_token": "Token de Utilizador ABRP (opcional)",
+          "scan_interval": "Intervalo de Atualização",
+          "api_base_url": "URL Base da API"
+        },
+        "data_description": {
+          "command_pin": "Necessário apenas para comandos sensíveis (Trancar/Destrancar Portas e Arranque Remoto).",
+          "abrp_user_token": "Envia automaticamente a telemetria em tempo real para o A Better Routeplanner (ABRP -> Car Settings -> Live Data -> Generic). Deixe em branco para desativar.",
+          "scan_interval": "Frequência com que o Home Assistant consulta a cloud OpenCARWINGS.",
+          "api_base_url": "URL base do seu servidor OpenCARWINGS."
+        }
+      }
+    }
+  }
+}
+

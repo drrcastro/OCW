@@ -11,6 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from .abrp import ABRPBridge
 from .api import OpenCarWingsAPI, AuthenticationError, RequestError
 
 DOMAIN = "ocw_integration"
@@ -87,8 +88,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         except Exception:
             pass
 
-    # Store client in hass.data under the entry id
-    hass.data[DOMAIN][entry.entry_id] = {"client": client}
+    # Optional ABRP telemetry bridge
+    abrp_token = (opts.get("abrp_user_token", entry.data.get("abrp_user_token", "")) or "").strip()
+    abrp_bridge = ABRPBridge(hass, client, abrp_token) if abrp_token else None
+    if abrp_bridge:
+        _LOGGER.info("ABRP telemetry bridge enabled for OpenCARWINGS (%s)", entry.title)
+
+    # Store client and optional ABRP bridge in hass.data under the entry id
+    hass.data[DOMAIN][entry.entry_id] = {
+        "client": client,
+        "abrp_bridge": abrp_bridge,
+    }
 
     async def _enrich_cars_with_details(cars: list) -> list:
         """Enrich lite car objects (from /api/car/) with detail fetched by VIN."""
@@ -152,6 +162,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
                 # Track the last successful update time for CarLastRequestedSensor
                 coordinator.last_update_time = datetime.now(timezone.utc)
+
+                if abrp_bridge is not None:
+                    try:
+                        await abrp_bridge.async_process_cars(cars)
+                    except Exception as err:
+                        _LOGGER.debug("Could not forward telemetry to ABRP: %s", err)
+
                 return cars
 
             # Fallback to raw request-based client (used in tests)
@@ -165,6 +182,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     _LOGGER.debug("Could not enrich car list with details: %s", err)
 
                 coordinator.last_update_time = datetime.now(timezone.utc)
+
+                if abrp_bridge is not None:
+                    try:
+                        await abrp_bridge.async_process_cars(result)
+                    except Exception as err:
+                        _LOGGER.debug("Could not forward telemetry to ABRP: %s", err)
+
                 return result
 
             raise RuntimeError("Client has no method to fetch cars")
@@ -205,6 +229,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN][entry.entry_id]["cars"] = hass.data[DOMAIN][entry.entry_id].get("cars", [])
         # Don't abort setup; proceed to forward platforms so entity platforms can be set up
         pass
+
+    # Schedule 5-minute ABRP heartbeat timer if ABRP bridge is enabled
+    if abrp_bridge is not None:
+        try:
+            from homeassistant.helpers.event import async_track_time_interval
+
+            async def _async_abrp_heartbeat(_now=None) -> None:
+                await abrp_bridge.async_heartbeat(coordinator)
+
+            unsub_abrp = async_track_time_interval(
+                hass, _async_abrp_heartbeat, timedelta(minutes=5)
+            )
+            entry.async_on_unload(unsub_abrp)
+        except Exception as err:
+            _LOGGER.debug("Could not register ABRP heartbeat interval: %s", err)
 
     # Forward setup to platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

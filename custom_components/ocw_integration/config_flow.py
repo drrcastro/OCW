@@ -62,6 +62,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain="ocw_integration"):
                         data={
                             "api_key": api_key,
                             "command_pin": user_input.get("command_pin", "").strip(),
+                            "abrp_user_token": user_input.get("abrp_user_token", "").strip(),
                             # persist initial scan interval choice
                             "scan_interval": scan_int,
                             "api_base_url": api_base,
@@ -90,6 +91,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain="ocw_integration"):
             {
                 vol.Required("api_key"): str,
                 vol.Optional("command_pin", default=""): str,
+                vol.Optional("abrp_user_token", default=""): str,
                 vol.Required("scan_interval", default=str(DEFAULT_SCAN_INTERVAL_MIN)): scan_selector,
                 vol.Required("api_base_url", default=DEFAULT_API_BASE_URL): str,
             }
@@ -118,6 +120,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 title="",
                 data={
                     "command_pin": user_input.get("command_pin", "").strip(),
+                    "abrp_user_token": user_input.get("abrp_user_token", "").strip(),
                     "scan_interval": scan_int,
                     "api_base_url": user_input.get("api_base_url", DEFAULT_API_BASE_URL).strip(),
                 },
@@ -136,6 +139,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         )
         current_pin = (
             entry.options.get("command_pin", entry.data.get("command_pin", ""))
+            if entry
+            else ""
+        )
+        current_abrp = (
+            entry.options.get("abrp_user_token", entry.data.get("abrp_user_token", ""))
             if entry
             else ""
         )
@@ -158,6 +166,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             step_id="init",
             data_schema=vol.Schema({
                 vol.Optional("command_pin", default=current_pin): str,
+                vol.Optional("abrp_user_token", default=current_abrp): str,
                 vol.Required("scan_interval", default=current_scan): scan_selector,
                 vol.Required("api_base_url", default=current_api): str,
             }),
