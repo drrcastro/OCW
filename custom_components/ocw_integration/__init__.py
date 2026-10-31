@@ -230,7 +230,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Don't abort setup; proceed to forward platforms so entity platforms can be set up
         pass
 
-    # Schedule 5-minute ABRP heartbeat timer if ABRP bridge is enabled
+    # Schedule 30-second ABRP heartbeat timer if ABRP bridge is enabled
     if abrp_bridge is not None:
         try:
             from homeassistant.helpers.event import async_track_time_interval
@@ -239,7 +239,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 await abrp_bridge.async_heartbeat(coordinator)
 
             unsub_abrp = async_track_time_interval(
-                hass, _async_abrp_heartbeat, timedelta(minutes=5)
+                hass, _async_abrp_heartbeat, timedelta(seconds=30)
             )
             entry.async_on_unload(unsub_abrp)
         except Exception as err:

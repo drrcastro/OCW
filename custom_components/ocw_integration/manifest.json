@@ -1,10 +1,12 @@
 {
   "domain": "ocw_integration",
   "name": "OpenCarWings",
-  "codeowners": ["@drrcastro"],
+  "codeowners": [
+    "@drrcastro"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/drrcastro/OCW",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/drrcastro/OCW/issues",
-  "version": "0.3.4"
+  "version": "0.3.6"
 }

@@ -14,7 +14,8 @@ _LOGGER = logging.getLogger(__name__)
 # Standard public ABRP API key for v1 generic telemetry (/1/tlm/send)
 DEFAULT_ABRP_API_KEY = "32b2162f-9599-4647-8139-66e9f9528370"
 ABRP_V1_TLM_URL = "https://api.iternio.com/1/tlm/send"
-ABRP_HEARTBEAT_SECONDS = 290  # Send keepalive slightly under 5 minutes (300s)
+ABRP_HEARTBEAT_INTERVAL_SECONDS = 30
+ABRP_HEARTBEAT_SECONDS = 25  # Allow slight timer jitter for 30s heartbeat
 
 
 @dataclass
@@ -27,6 +28,8 @@ class SnapshotState:
     lon: Optional[float]
     odometer_km: Optional[float]
     ev_updated_iso: Optional[str]
+    speed_kmh: Optional[float] = None
+    power_kw: Optional[float] = None
 
 
 def parse_iso_timestamp(iso_str: Optional[str]) -> Optional[float]:
@@ -105,10 +108,9 @@ def build_abrp_telemetry(
         default=now_epoch,
     )
 
-    # ABRP requires `utc` to be current to treat telemetry as "Live Data".
-    # If the reading was captured within the last 10 minutes, use its exact timestamp;
-    # otherwise (e.g. parked heartbeat), use current UTC epoch so ABRP keeps the link active.
-    utc_to_send = int(reading_epoch if (now_epoch - reading_epoch) <= 600 else now_epoch)
+    # ABRP requires `utc` to be the current Unix timestamp on every 30s push
+    # to keep the vehicle status as "Online / Live Data".
+    utc_to_send = int(now_epoch)
 
     tlm: Dict[str, Any] = {"utc": utc_to_send}
     if car_model:
@@ -272,6 +274,12 @@ def build_abrp_telemetry(
                     calc_speed = dist_km / dt_hours
                     if 0.0 <= calc_speed <= 200.0:
                         speed_kmh = round(calc_speed, 1)
+    elif prev_state is not None and reading_epoch == prev_state.timestamp_epoch:
+        # Preserve differential speed/power across 30s heartbeats of the same TCU reading
+        if speed_kmh is None:
+            speed_kmh = prev_state.speed_kmh
+        if power_kw is None:
+            power_kw = prev_state.power_kw
 
     if speed_kmh is not None:
         tlm["speed"] = speed_kmh
@@ -285,6 +293,8 @@ def build_abrp_telemetry(
         lon=curr_lon,
         odometer_km=odometer_km,
         ev_updated_iso=ev_updated_iso,
+        speed_kmh=speed_kmh,
+        power_kw=power_kw,
     )
     return tlm, new_state
 
@@ -414,35 +424,27 @@ class ABRPBridge:
                 _LOGGER.warning("Error sending telemetry to ABRP for %s: %s", vin, err)
 
     async def async_heartbeat(self, coordinator: Any = None) -> None:
-        """Periodic 5-minute callback to keep ABRP Live Data active."""
+        """Periodic 30-second callback to keep ABRP Live Data online."""
         if not self.user_token:
             return
 
         now = time.time()
-        # Check if any car is currently active (driving or charging)
-        any_active = False
         any_due = False
-        for vin, car_data in self._last_car_data.items():
+        for vin in self._last_car_data:
             last_sent = self._last_sent_times.get(vin, 0.0)
             if (now - last_sent) >= ABRP_HEARTBEAT_SECONDS:
                 any_due = True
-            ev_info = car_data.get("ev_info") or {}
-            if ev_info.get("charging") or ev_info.get("car_running"):
-                any_active = True
+                break
 
-        if not any_due:
+        if not any_due and self._last_car_data:
             return
 
-        # If the car is driving or charging and a coordinator is available,
-        # trigger a full coordinator refresh so both HA and ABRP get fresh data.
-        if any_active and coordinator is not None and hasattr(coordinator, "async_request_refresh"):
-            try:
-                await coordinator.async_request_refresh()
-                return
-            except Exception as err:
-                _LOGGER.debug("Coordinator refresh during ABRP heartbeat failed: %s", err)
+        cars = (
+            getattr(coordinator, "data", None)
+            if coordinator is not None
+            else None
+        ) or list(self._last_car_data.values())
 
-        # Otherwise (e.g. parked), push a heartbeat with current UTC using cached vehicle data
-        if self._last_car_data:
-            await self.async_process_cars(list(self._last_car_data.values()), force_heartbeat=True)
+        if cars:
+            await self.async_process_cars(list(cars), force_heartbeat=True)
 
