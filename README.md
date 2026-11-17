@@ -26,7 +26,6 @@
 - **📊 Rich Telemetry & Diagnostics:** State of Charge (SoC), State of Health (SoH), GIDs, remaining energy (kWh), range estimates, TPMS tyre pressures, and Diagnostic Trouble Codes (DTCs).
 - **⏰ Native Timer Management:** View active vehicle timers via a `select` entity and create, update, pause, or delete schedules through Home Assistant services.
 - **📍 GPS Tracking:** Real-time vehicle location tracking on your Home Assistant map.
-- **🗺️ Built-in ABRP Live Telemetry Bridge:** Optionally enter your *A Better Routeplanner* User Token in the integration settings to automatically stream live battery, charging, power, speed, temperature, and GPS telemetry to ABRP—no external scripts or cron jobs required.
 - **🔑 Simple UI Setup:** Quick authentication using your Personal API Token with configurable polling intervals.
 
 ---
