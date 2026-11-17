@@ -11,10 +11,10 @@
 
 [![GitHub Release](https://img.shields.io/github/v/release/drrcastro/OCW?style=for-the-badge&logo=github)](https://github.com/drrcastro/OCW/releases)
 [![GitHub Activity](https://img.shields.io/github/commit-activity/y/drrcastro/OCW?style=for-the-badge&logo=git)](https://github.com/drrcastro/OCW/commits/main)
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge&logo=homeassistantcommunitystore&logoColor=white)](https://github.com/hacs/integration)
+[![Marketplace Custom](https://img.shields.io/badge/Marketplace-Custom-18BCF2.svg?style=for-the-badge&logo=homeassistant&logoColor=white)](https://www.home-assistant.io/integrations/marketplace/)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.3%2B-18BCF2?style=for-the-badge&logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 
-[![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=drrcastro&repository=OCW&category=integration)
+[![Open your Home Assistant instance and open a repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=drrcastro&repository=OCW&category=integration)
 
 </div>
 
@@ -64,15 +64,18 @@
 
 ## 🔧 Installation
 
-### Option 1: HACS (Recommended)
+### Option 1: Home Assistant Marketplace (Recommended)
 
-1. Click the button below or manually add `https://github.com/drrcastro/OCW` as a **Custom Repository** (Category: **Integration**) in HACS:
+1. Click the button below, or open **Settings → Marketplace** in Home Assistant *(2026.11+, with your GitHub account connected)* and add `https://github.com/drrcastro/OCW` as a custom repository (Category: **Integration**) via **Add from link** (or the **⋮** menu → **Custom repositories**):
 
-   [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=drrcastro&repository=OCW&category=integration)
+   [![Open your Home Assistant instance and open a repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=drrcastro&repository=OCW&category=integration)
 
-2. Search for **OpenCarWings** in HACS and click **Download**.
+2. Open **OpenCarWings** in the Marketplace and click **Install**.
 3. **Restart Home Assistant**.
 4. Go to **Settings → Devices & Services → Add Integration** and search for **OpenCarWings**.
+
+> [!NOTE]
+> On Home Assistant **2026.10 or earlier**, use **HACS** to add `https://github.com/drrcastro/OCW` as a **Custom Repository** (Category: **Integration**) and click **Download** instead.
 
 ### Option 2: Manual Installation
 
